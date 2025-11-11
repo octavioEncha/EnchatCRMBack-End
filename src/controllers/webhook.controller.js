@@ -4,12 +4,16 @@ import {
   ensureContact,
   saveMessage,
 } from "../services/session.service.js";
+import * as messagesService from "../services/messages.service.js";
 
-export const webhookController = (req, res) => {
+export const webhookController = async (req, res) => {
   try {
-    const { data } = req.body;
+    const { data, event, instance } = req.body; // 👈 aqui está a diferença
 
-    if (!data?.key) return res.status(200).send("Dados inválidos");
+    if (!data?.key) {
+      console.log("❌ Dados inválidos recebidos:", req.body);
+      return res.status(200).send("Dados inválidos");
+    }
 
     const { id: messageId, remoteJid, fromMe } = data.key;
 
@@ -19,7 +23,7 @@ export const webhookController = (req, res) => {
 
     processedMessageIds.add(messageId);
 
-    // Extrai o texto (padrão Evolution API)
+    // Extrai o texto (formato Evolution API)
     const text =
       data.message?.conversation ||
       data.message?.extendedTextMessage?.text ||
@@ -30,7 +34,6 @@ export const webhookController = (req, res) => {
     const pushName = data.pushName || "Desconhecido";
     if (!text || !remoteJid) return res.status(200).send("Sem texto");
 
-    // Define se é mensagem enviada ou recebida
     const direction = fromMe ? "outgoing" : "incoming";
 
     const msg = {
@@ -42,23 +45,26 @@ export const webhookController = (req, res) => {
       contact: remoteJid,
     };
 
-    console.log(data);
+    console.log(`💬 Nova mensagem (${direction}):`, msg);
+
     // Salva e envia para todas as sessões
     for (const sessionId in sessions) {
       const session = sessions[sessionId];
       ensureContact(sessionId, remoteJid, pushName);
       saveMessage(sessionId, remoteJid, msg);
 
-      // 🔥 Agora diferenciamos o evento dependendo da direção
       const eventName =
         direction === "outgoing" ? "outgoing_message" : "incoming_message";
 
       global.io.to(session.socketId).emit(eventName, msg);
     }
 
+    // 🔥 Cria registro no Supabase (ou outra persistência)
+    await messagesService.createNewMessage({ data: req.body });
+
     return res.status(200).send("OK");
   } catch (error) {
-    console.error("❌ Erro no webhook:", error.message);
+    console.error("❌ Erro no webhook:", error);
     return res.status(200).send("Erro");
   }
 };

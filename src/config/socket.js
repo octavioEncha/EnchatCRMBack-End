@@ -1,6 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 import fetch from "node-fetch";
 import { sessions, saveMessage } from "../services/session.service.js";
+import {
+  createNewMessageSendCRM,
+  createNewMessage,
+} from "../services/messages.service.js";
+import { searchLeadId } from "../services/leads.service.js";
 
 const EVOLUTION_API = "http://localhost:8081";
 const API_KEY = "meu_token_secreto";
@@ -199,7 +204,10 @@ const initSocket = (io) => {
         // ------------------------------------------
         // 2) Instância em "connecting" -> solicitar QR via /connect
         // ------------------------------------------
-        else if (checkData.instance?.state === "connecting") {
+        else if (
+          checkData.instance?.state === "connecting" ||
+          checkData.instance?.state === "close"
+        ) {
           console.log(
             `🔁 Instância ${sessionId} em 'connecting', solicitando geração de QR (connect)...`
           );
@@ -364,7 +372,7 @@ const initSocket = (io) => {
       const { sessionId, text, to } = data;
       if (!sessionId || !to || !text) return;
 
-      console.log(`💬 [${sessionId}] -> ${to}: ${text}`);
+      const lead = await searchLeadId({ id: to });
 
       const msgId = uuidv4();
       const msg = {
@@ -385,13 +393,18 @@ const initSocket = (io) => {
               "Content-Type": "application/json",
               apikey: API_KEY,
             },
-            body: JSON.stringify({ number: to, text }),
+            body: JSON.stringify({ number: lead.phone, text }),
           }
         );
 
         if (!sendResponse.ok)
           console.error(`⚠️ Falha ao enviar (${sendResponse.status})`);
-        else console.log(`✅ Enviado para Evolution (${to})`);
+        else {
+          const data = await sendResponse.json();
+          const createMessageCRM = await createNewMessageSendCRM({ data });
+
+          console.log(`✅ Enviado para Evolution (${to})`);
+        }
       } catch (err) {
         console.error("❌ Erro ao enviar mensagem:", err?.message || err);
       }
