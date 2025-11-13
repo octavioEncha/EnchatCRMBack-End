@@ -69,7 +69,7 @@ export const createNewLead = async ({ data, phone }) => {
           avatar: data.avatar,
           email: "",
           phone: phone,
-          source: "website",
+          source: "crm",
         },
       ])
       .select(); // retorna o lead criado

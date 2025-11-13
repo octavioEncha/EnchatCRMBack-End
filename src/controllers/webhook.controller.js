@@ -9,7 +9,7 @@ import * as messagesService from "../services/messages.service.js";
 export const webhookController = async (req, res) => {
   try {
     const { data, event, instance } = req.body; // 👈 aqui está a diferença
-
+    const lead = await messagesService.createNewMessage({ data: req.body });
     if (!data?.key) {
       console.log("❌ Dados inválidos recebidos:", req.body);
       return res.status(200).send("Dados inválidos");
@@ -38,9 +38,12 @@ export const webhookController = async (req, res) => {
 
     const msg = {
       id: messageId,
+      lead_id: lead.lead?.id,
       direction,
-      user: pushName,
+      user: lead.lead?.name,
       text,
+      avatar: lead.lead?.avatar,
+      conversation_id: lead.conversation.id,
       timestamp: new Date(),
       contact: remoteJid,
     };
@@ -60,7 +63,6 @@ export const webhookController = async (req, res) => {
     }
 
     // 🔥 Cria registro no Supabase (ou outra persistência)
-    await messagesService.createNewMessage({ data: req.body });
 
     return res.status(200).send("OK");
   } catch (error) {

@@ -2,19 +2,29 @@ import { supabase } from "../config/supabaseClient.js";
 import * as leadsService from "./leads.service.js";
 import * as conversationService from "./conversation.service.js";
 
+/**
+ * Retorna todas as mensagens de uma conversa específica
+ */
 export const especificMessaByConversationID = async ({ conversationId }) => {
   try {
-    const searchAllMessages = await supabase
+    const { data, error } = await supabase
       .from("messages")
       .select("*")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: false });
-    return searchAllMessages.data;
+
+    if (error) throw error;
+    return data;
   } catch (error) {
-    //res.status(400).json({ error: error.message });
+    console.error("Erro ao buscar mensagens:", error.message);
+    return [];
   }
 };
 
+/**
+ * Cria nova mensagem a partir do recebimento via WhatsApp
+ * Pode ser enviada pelo usuário (fromMe = true) ou pelo lead (fromMe = false)
+ */
 export const createNewMessage = async ({ data }) => {
   try {
     const remoteJidRaw = data?.data?.key?.remoteJid;
@@ -26,102 +36,41 @@ export const createNewMessage = async ({ data }) => {
     const fromMe = data?.data?.key?.fromMe;
     const instance = data?.instance;
 
-    if (fromMe) {
-      if (!phone || !messageContent) {
-        console.warn("⚠️ Dados insuficientes:", { phone, messageContent });
-        return null;
-      }
-
-      let lead = await leadsService.searchLead({ phone });
-      if (!lead) {
-        try {
-          const response = await fetch(
-            "http://localhost:8081/chat/fetchProfile/" + instance,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: "meu_token_secreto",
-              },
-              body: JSON.stringify({
-                number: phone, // <-- correção
-              }),
-            }
-          );
-          const dataProfileUser = await response.json();
-
-          data.data.pushName = dataProfileUser.name;
-          data.avatar = dataProfileUser.picture;
-
-          console.log(dataProfileUser);
-        } catch (err) {
-          console.warn("ERRO NA BUSCA DO LEAD: " + err.message);
-        }
-
-        lead = await leadsService.createNewLead({ data, phone });
-        if (!lead) return console.warn("⚠️ Falha ao criar lead.");
-      }
-      let conversation = await conversationService.searchConversation({
-        lead_id: lead.id,
-      });
-
-      if (!conversation) {
-        conversation = await conversationService.createNewConversation({
-          data: { user_id: lead.user_id, lead_id: lead.id },
-        });
-        if (!conversation) return console.warn("⚠️ Falha ao criar conversa.");
-      }
-
-      // FALTA PEGAR NOME DO LEAD
-      console.log("MENSAGEM ENVIADA POR MIM PELO WHATSAPP");
-      const { data: insertedMessageUser, error: errorUser } = await supabase
-        .from("messages")
-        .insert([
-          {
-            conversation_id: conversation.id,
-            sender_type: "user",
-            sender_id: lead.id,
-            content: messageContent,
-          },
-        ])
-        .select()
-        .single();
-
-      if (errorUser) throw new Error(error.message);
-
-      console.log("✅ Mensagem criada:", insertedMessageUser);
-      return insertedMessageUser;
-    }
-
     if (!phone || !messageContent) {
       console.warn("⚠️ Dados insuficientes:", { phone, messageContent });
       return null;
     }
 
+    // Busca ou cria o lead
     let lead = await leadsService.searchLead({ phone });
     if (!lead) {
-      const response = await fetch(
-        "http://localhost:8081/chat/fetchProfile/" + instance,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: "meu_token_secreto",
-          },
-          body: JSON.stringify({
-            number: phone, // <-- correção
-          }),
-        }
-      );
-      const dataProfileUser = await response.json();
-
-      data.data.pushName = dataProfileUser.name;
-      data.avatar = dataProfileUser.picture;
+      try {
+        const response = await fetch(
+          `http://localhost:8081/chat/fetchProfile/${instance}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: "meu_token_secreto",
+            },
+            body: JSON.stringify({ number: phone }),
+          }
+        );
+        const profile = await response.json();
+        data.data.pushName = profile.name;
+        data.avatar = profile.picture;
+      } catch (err) {
+        console.warn("Erro ao buscar perfil do lead:", err.message);
+      }
 
       lead = await leadsService.createNewLead({ data, phone });
-      if (!lead) return console.warn("⚠️ Falha ao criar lead.");
+      if (!lead) {
+        console.warn("⚠️ Falha ao criar lead.");
+        return null;
+      }
     }
 
+    // Busca ou cria a conversa
     let conversation = await conversationService.searchConversation({
       lead_id: lead.id,
     });
@@ -130,15 +79,22 @@ export const createNewMessage = async ({ data }) => {
       conversation = await conversationService.createNewConversation({
         data: { user_id: lead.user_id, lead_id: lead.id },
       });
-      if (!conversation) return console.warn("⚠️ Falha ao criar conversa.");
+      if (!conversation) {
+        console.warn("⚠️ Falha ao criar conversa.");
+        return null;
+      }
     }
 
-    const { data: insertedMessageLead, error } = await supabase
+    // Define tipo de remetente
+    const senderType = fromMe ? "user" : "lead";
+
+    // Cria a mensagem
+    const { data: insertedMessage, error: insertError } = await supabase
       .from("messages")
       .insert([
         {
           conversation_id: conversation.id,
-          sender_type: "lead",
+          sender_type: senderType,
           sender_id: lead.id,
           content: messageContent,
         },
@@ -146,61 +102,104 @@ export const createNewMessage = async ({ data }) => {
       .select()
       .single();
 
-    if (error) throw new Error(error.message);
+    if (insertError) throw insertError;
 
-    console.log("✅ Mensagem criada:", insertedMessageLead);
-    return insertedMessageLead;
+    // Atualiza o timestamp da conversa
+    const now = new Date().toISOString();
+    const { error: updateError } = await supabase
+      .from("conversations")
+      .update({
+        last_message_at: now,
+      })
+      .eq("id", conversation.id);
+
+    if (updateError) {
+      console.error("Erro ao atualizar last_message_at:", updateError);
+    }
+
+    console.log(
+      `✅ Mensagem criada (${senderType}):`,
+      insertedMessage?.content || "[sem conteúdo]"
+    );
+
+    return { lead, conversation, message: insertedMessage };
   } catch (err) {
-    console.error("❌ Erro inesperado:", err.message);
+    console.error("❌ Erro inesperado em createNewMessage:", err.message);
     return null;
   }
 };
 
+/**
+ * Cria nova mensagem enviada manualmente pelo CRM (via interface)
+ */
 export const createNewMessageSendCRM = async ({ data }) => {
-  const phone = data?.key?.remoteJid.replace(/\D/g, "");
+  try {
+    const phone = data?.key?.remoteJid?.replace(/\D/g, "");
+    const content = data?.message?.conversation;
 
-  const content = data?.message?.conversation;
-
-  let lead = await leadsService.searchLead({ phone });
-  if (!lead) {
-    try {
-    } catch (err) {
-      console.warn("ERRO NA BUSCA DO LEAD: " + err.message);
+    if (!phone || !content) {
+      console.warn("⚠️ Dados insuficientes:", { phone, content });
+      return null;
     }
 
-    return;
-    lead = await leadsService.createNewLead({ data, phone });
-    if (!lead) return console.warn("⚠️ Falha ao criar lead.");
-  }
+    // Busca ou cria o lead
+    let lead = await leadsService.searchLead({ phone });
+    if (!lead) {
+      lead = await leadsService.createNewLead({ data, phone });
+      if (!lead) {
+        console.warn("⚠️ Falha ao criar lead.");
+        return null;
+      }
+    }
 
-  let conversation = await conversationService.searchConversation({
-    lead_id: lead.id,
-  });
-
-  if (!conversation) {
-    conversation = await conversationService.createNewConversation({
-      data: { user_id: lead.user_id, lead_id: lead.id },
+    // Busca ou cria a conversa
+    let conversation = await conversationService.searchConversation({
+      lead_id: lead.id,
     });
-    if (!conversation) return console.warn("⚠️ Falha ao criar conversa.");
+
+    if (!conversation) {
+      conversation = await conversationService.createNewConversation({
+        data: { user_id: lead.user_id, lead_id: lead.id },
+      });
+      if (!conversation) {
+        console.warn("⚠️ Falha ao criar conversa.");
+        return null;
+      }
+    }
+
+    // Insere a nova mensagem
+    const { data: insertedMessage, error: insertError } = await supabase
+      .from("messages")
+      .insert([
+        {
+          conversation_id: conversation.id,
+          sender_type: "user",
+          sender_id: lead.id,
+          content,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    // Atualiza o timestamp da conversa
+    const now = new Date().toISOString();
+    const { error: updateError } = await supabase
+      .from("conversations")
+      .update({
+        last_message_at: now,
+      })
+      .eq("id", conversation.id);
+
+    if (updateError) {
+      console.error("Erro ao atualizar last_message_at:", updateError);
+    }
+
+    console.log("✅ Mensagem criada via CRM:", insertedMessage.content);
+    return { lead, conversation, message: insertedMessage };
+  } catch (err) {
+    console.error("❌ Erro em createNewMessageSendCRM:", err.message);
+    return null;
   }
-
-  const { data: insertedMessageUser, error: errorUser } = await supabase
-    .from("messages")
-    .insert([
-      {
-        conversation_id: conversation.id,
-        sender_type: "user",
-        sender_id: lead.id,
-        content: content,
-      },
-    ])
-    .select()
-    .single();
-
-  if (errorUser) throw new Error(error.message);
-
-  console.log("✅ Mensagem criada:", insertedMessageUser);
-  return insertedMessageUser;
-
-  console.log(data);
 };
