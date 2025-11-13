@@ -8,4 +8,5 @@ router.get(
   messageController.specificMessaByConversationID
 );
 
+router.get("/message/lead/:lead_id", messageController.specificMessaByLeadId);
 export default router;

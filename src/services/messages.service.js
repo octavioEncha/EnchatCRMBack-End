@@ -21,6 +21,30 @@ export const especificMessaByConversationID = async ({ conversationId }) => {
   }
 };
 
+export const specificMessaByLeadId = async ({ lead_id }) => {
+  try {
+    const { data: searchConversation, err } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("lead_id", lead_id);
+
+    if (!searchConversation) {
+      throw new Error("Usuário não achado ou conversation não presente");
+    }
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", searchConversation[0].id)
+      .order("created_at", { ascending: false });
+
+    return data;
+  } catch (error) {
+    console.error("Erro ao buscar mensagens:", error.message);
+    return [];
+  }
+};
+
 /**
  * Cria nova mensagem a partir do recebimento via WhatsApp
  * Pode ser enviada pelo usuário (fromMe = true) ou pelo lead (fromMe = false)
