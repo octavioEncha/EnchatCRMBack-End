@@ -2,63 +2,51 @@ import { supabase } from "../config/supabaseClient.js";
 import * as leadsService from "./leads.service.js";
 import * as conversationService from "./conversation.service.js";
 
+import * as messageModel from "../models/message.model.js";
+
 /**
  * Retorna todas as mensagens de uma conversa específica
  */
 export const especificMessaByConversationID = async ({ conversationId }) => {
-  try {
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: false });
+  const getMessagesByConversationId =
+    await messageModel.especificMessaByConversationID({ conversationId });
 
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Erro ao buscar mensagens:", error.message);
-    return [];
+  if (!getMessagesByConversationId) {
+    throw new Error("Nenhuma mensagem encontrada para esta conversa.");
   }
+  return getMessagesByConversationId;
 };
 
 export const specificMessaByLeadId = async ({ lead_id }) => {
-  try {
-    const { data: searchConversation, err } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("lead_id", lead_id);
+  const searchConversation = await conversationService.searchConversation({
+    lead_id,
+  });
 
-    if (!searchConversation) {
-      throw new Error("Usuário não achado ou conversation não presente");
-    }
+  const getMessagesByConversationId =
+    await messageModel.especificMessaByConversationID({
+      conversationId: searchConversation.id,
+    });
 
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", searchConversation[0].id)
-      .order("created_at", { ascending: false });
-
-    return data;
-  } catch (error) {
-    console.error("Erro ao buscar mensagens:", error.message);
-    return [];
+  if (!getMessagesByConversationId) {
+    throw new Error("Nenhuma mensagem encontrada para este lead.");
   }
+
+  return getMessagesByConversationId;
 };
 
 /**
  * Cria nova mensagem a partir do recebimento via WhatsApp
  * Pode ser enviada pelo usuário (fromMe = true) ou pelo lead (fromMe = false)
  */
-export const createNewMessage = async ({ data }) => {
+export const createNewMessage = async ({ data, event, instance }) => {
   try {
-    const remoteJidRaw = data?.data?.key?.remoteJid;
+    const remoteJidRaw = data?.key?.remoteJid;
     const phone = remoteJidRaw ? remoteJidRaw.replace(/\D/g, "") : null;
     const messageContent =
-      data?.data?.message?.conversation ||
-      data?.data?.message?.extendedTextMessage?.text ||
+      data?.message?.conversation ||
+      data?.message?.extendedTextMessage?.text ||
       "";
-    const fromMe = data?.data?.key?.fromMe;
-    const instance = data?.instance;
+    const fromMe = data?.key?.fromMe;
 
     if (!phone || !messageContent) {
       console.warn("⚠️ Dados insuficientes:", { phone, messageContent });
@@ -67,31 +55,13 @@ export const createNewMessage = async ({ data }) => {
 
     // Busca ou cria o lead
     let lead = await leadsService.searchLead({ phone });
-    if (!lead) {
-      try {
-        const response = await fetch(
-          `http://localhost:8081/chat/fetchProfile/${instance}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: "meu_token_secreto",
-            },
-            body: JSON.stringify({ number: phone }),
-          }
-        );
-        const profile = await response.json();
-        data.data.pushName = profile.name;
-        data.avatar = profile.picture;
-      } catch (err) {
-        console.warn("Erro ao buscar perfil do lead:", err.message);
-      }
 
-      lead = await leadsService.createNewLead({ data, phone });
-      if (!lead) {
-        console.warn("⚠️ Falha ao criar lead.");
-        return null;
-      }
+    if (!lead) {
+      const createNewLead = await leadsService.createNewLead({
+        data,
+        phone,
+        instance,
+      });
     }
 
     // Busca ou cria a conversa
@@ -112,47 +82,66 @@ export const createNewMessage = async ({ data }) => {
     // Define tipo de remetente
     const senderType = fromMe ? "user" : "lead";
 
-    // Cria a mensagem
-    const { data: insertedMessage, error: insertError } = await supabase
-      .from("messages")
-      .insert([
-        {
-          conversation_id: conversation.id,
-          sender_type: senderType,
-          sender_id: lead.id,
-          content: messageContent,
-        },
-      ])
-      .select()
-      .single();
+    const dataMessage = {
+      conversation_id: conversation.id,
+      senderType,
+      lead_id: lead.id,
+      messageContent,
+    };
+    const createNewMessage = await messageModel.createMessage({
+      data: dataMessage,
+    });
 
-    if (insertError) throw insertError;
-
-    // Atualiza o timestamp da conversa
-    const now = new Date().toISOString();
-    const { error: updateError } = await supabase
-      .from("conversations")
-      .update({
-        last_message_at: now,
-      })
-      .eq("id", conversation.id);
-
-    if (updateError) {
-      console.error("Erro ao atualizar last_message_at:", updateError);
+    if (!createNewMessage) {
+      throw new Error("Falha ao criar nova mensagem.");
     }
 
-    console.log(
-      `✅ Mensagem criada (${senderType}):`,
-      insertedMessage?.content || "[sem conteúdo]"
-    );
+    const updateLastMessageTimestamp =
+      await messageModel.updateLastMessageTimestamp({
+        conversationId: conversation.id,
+      });
 
-    return { lead, conversation, message: insertedMessage };
+    return { lead, conversation, message: createNewMessage };
   } catch (err) {
     console.error("❌ Erro inesperado em createNewMessage:", err.message);
     return null;
   }
 };
 
+// Cria uma mensagem enviada pelo disparo no CRM
+export const createMessageForShootingToLead = async ({ phone, content }) => {
+  try {
+    let lead = await leadsService.searchLead({ phone });
+
+    let conversation = await conversationService.searchConversation({
+      lead_id: lead.id,
+    });
+
+    const createMessageForShootingToLead =
+      await messageModel.createMessageForShootingToLead({
+        content,
+        lead_id: lead.id,
+        conversation_id: conversation.id,
+      });
+    if (!createMessageForShootingToLead) {
+      throw new Error("Falha ao criar nova mensagem via Disparo do CRM.");
+    }
+
+    const updateLastMessageTimestamp =
+      await messageModel.updateLastMessageTimestamp({
+        conversationId: conversation.id,
+      });
+
+    console.log(
+      "✅ Mensagem criada via Disparo do CRM:",
+      createMessageForShootingToLead.content
+    );
+    return { lead, conversation, message: createMessageForShootingToLead };
+  } catch (err) {
+    console.error("❌ Erro em createNewMessageSendCRM:", err.message);
+    return null;
+  }
+};
 /**
  * Cria nova mensagem enviada manualmente pelo CRM (via interface)
  */
@@ -191,37 +180,22 @@ export const createNewMessageSendCRM = async ({ data }) => {
       }
     }
 
-    // Insere a nova mensagem
-    const { data: insertedMessage, error: insertError } = await supabase
-      .from("messages")
-      .insert([
-        {
-          conversation_id: conversation.id,
-          sender_type: "user",
-          sender_id: lead.id,
-          content,
-        },
-      ])
-      .select()
-      .single();
-
-    if (insertError) throw insertError;
-
-    // Atualiza o timestamp da conversa
-    const now = new Date().toISOString();
-    const { error: updateError } = await supabase
-      .from("conversations")
-      .update({
-        last_message_at: now,
-      })
-      .eq("id", conversation.id);
-
-    if (updateError) {
-      console.error("Erro ao atualizar last_message_at:", updateError);
+    const createNewMessage = await messageModel.createNewMessageSendCRM({
+      content,
+      lead_id: lead.id,
+      conversation_id: conversation.id,
+    });
+    if (!createNewMessage) {
+      throw new Error("Falha ao criar nova mensagem via CRM.");
     }
 
-    console.log("✅ Mensagem criada via CRM:", insertedMessage.content);
-    return { lead, conversation, message: insertedMessage };
+    const updateLastMessageTimestamp =
+      await messageModel.updateLastMessageTimestamp({
+        conversationId: conversation.id,
+      });
+
+    console.log("✅ Mensagem criada via CRM:", createNewMessage.content);
+    return { lead, conversation, message: createNewMessage };
   } catch (err) {
     console.error("❌ Erro em createNewMessageSendCRM:", err.message);
     return null;

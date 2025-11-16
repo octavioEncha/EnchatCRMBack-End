@@ -5,6 +5,7 @@ import userRoutes from "./user.routes.js";
 import conversatioRoutes from "./conversation.route.js";
 import messageRoutes from "./message.route.js";
 import leadRoutes from "./lead.route.js";
+import shootingRoutes from "./shooting.route.js";
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use("/", userRoutes);
 router.use("/", conversatioRoutes);
 router.use("/", messageRoutes);
 router.use("/", leadRoutes);
+router.use("/", shootingRoutes);
 
 export default router; // 👈 ESSA LINHA É FUNDAMENTAL

@@ -1,29 +1,23 @@
-import { supabase } from "../config/supabaseClient.js";
+import * as conversationModels from "../models/conversation.model.js";
+import * as messageModels from "../models/message.model.js";
 
 export const listAllConversation = async ({ user_id }) => {
   try {
     // 1. Buscar conversas do usuário
-    const { data: conversations, error } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("user_id", user_id)
-      .order("last_message_at", { ascending: false });
+    const conversations = await conversationModels.listAllConversation({
+      user_id,
+    });
 
-    if (error) {
-      console.error("Erro ao buscar conversas:", error.message);
-      return [];
+    if (!conversations) {
+      throw new Error("Nenhuma conversa encontrada para o usuário.");
     }
 
     // 2. Para cada conversa, buscar a última mensagem
     const results = await Promise.all(
       conversations.map(async (conv) => {
-        const { data: lastMessage } = await supabase
-          .from("messages")
-          .select("*")
-          .eq("conversation_id", conv.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const lastMessage = await messageModels.listLastMessage({
+          conversation_id: conv.id,
+        });
 
         return {
           ...conv,
@@ -31,46 +25,38 @@ export const listAllConversation = async ({ user_id }) => {
         };
       })
     );
-    console.log(results);
+
     return results;
   } catch (err) {
-    console.error("Erro inesperado ao buscar conversa:", err.message);
-    return [];
+    throw new Error("Erro inesperado ao buscar conversa:", err.message);
   }
 };
 
 export const searchConversation = async ({ lead_id }) => {
   try {
-    const { data, error } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("lead_id", lead_id)
-      .maybeSingle();
-    console.log(data);
-    if (error) {
-      console.error("❌ Erro ao buscar lead:", error.message);
+    const searchConversation = await conversationModels.searchConversation({
+      lead_id,
+    });
+    if (!searchConversation) {
+      console.log("Nenhuma conversa encontrada para o lead_id:", lead_id);
       return null;
     }
-    return data;
+
+    return searchConversation;
   } catch (err) {
-    console.error("Erro inesperado ao buscar conversa:", err.message);
+    throw new Error("Erro inesperado ao buscar conversa:", err.message);
     return null;
   }
 };
 
 export const createNewConversation = async ({ data }) => {
-  console.log(data);
-
   try {
-    const { data: createNewConversation, error } = await supabase
-      .from("conversations")
-      .insert({
-        user_id: data.user_id,
-        lead_id: data.lead_id,
-      })
-      .select();
+    const createNewConversation =
+      await conversationModels.createNewConversation({
+        data,
+      });
 
-    return createNewConversation?.[0] || null;
+    return createNewConversation;
   } catch (err) {
     console.error("Erro inesperado ao criar conversation:", err.message);
     return null;

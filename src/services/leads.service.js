@@ -1,92 +1,58 @@
-import { supabase } from "../config/supabaseClient.js";
+import * as leadModel from "../models/lead.model.js";
+import * as inboxModel from "../models/inbox.model.js";
 
 export const searchLead = async ({ phone }) => {
-  try {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("phone", phone)
-      .maybeSingle(); // ✅ retorna null se não encontrar
-    if (error) {
-      console.error("❌ Erro ao buscar lead:", error.message);
-      return null;
-    }
+  const lead = await leadModel.searchLeadPhone({ phone });
 
-    return data;
-  } catch (err) {
-    console.error("Erro inesperado ao buscar lead:", err.message);
-    return null;
-  }
+  return lead;
 };
 
 export const searchLeadId = async ({ id }) => {
-  console.log(id);
-  try {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle(); // ✅ retorna null se não encontrar
-    if (error) {
-      console.error("❌ Erro ao buscar lead:", error.message);
-      return null;
-    }
+  const searchLeadId = await leadModel.searchLeadId({ id });
 
-    return data;
-  } catch (err) {
-    console.error("Erro inesperado ao buscar lead:", err.message);
+  if (!searchLeadId) {
+    console.error("❌ Lead não encontrado");
     return null;
   }
+
+  return searchLeadId;
 };
 
-export const createNewLead = async ({ data, phone }) => {
-  try {
-    const phoneBox = data?.sender?.replace(/\D/g, ""); // remove tudo que não for número
+export const createNewLead = async ({ data, phone, instance }) => {
+  // remove tudo que não for número
+  const searchInbox = await inboxModel.searchInbox({ instance });
 
-    // 1️⃣ Verifica se o canal de integração existe
-    const { data: searchInbox, error: errorSearch } = await supabase
-      .from("integration_channels")
-      .select("user_id")
-      .eq("number", phoneBox)
-      .maybeSingle();
-
-    if (errorSearch) {
-      console.error("❌ Erro ao buscar canal:", errorSearch.message);
-      return null;
-    }
-
-    const name = data.data.pushName;
-
-    console.log(data);
-
-    // 2️⃣ Cria o lead
-    const { data: insertedLead, error: errorInsert } = await supabase
-      .from("leads")
-      .insert([
-        {
-          user_id: searchInbox.user_id,
-          name: name || "...",
-          avatar: data.avatar,
-          email: "",
-          phone: phone,
-          source: "crm",
-        },
-      ])
-      .select(); // retorna o lead criado
-
-    console.log(insertedLead);
-
-    if (errorInsert) {
-      console.error("❌ Erro ao criar lead:", errorInsert.message);
-      return null;
-    }
-
-    return insertedLead?.[0] || null;
-
-    /*
-     */
-  } catch (err) {
-    console.error("⚠️ Erro inesperado ao criar lead:", err.message);
-    return null;
+  if (!searchInbox) {
+    throw new Error("❌ Erro ao buscar canal:");
   }
+  const response = await fetch(
+    `http://localhost:8081/chat/fetchProfile/${instance}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: "meu_token_secreto",
+      },
+      body: JSON.stringify({ number: phone }),
+    }
+  );
+  const profile = await response.json();
+  console.log(profile);
+
+  const leadData = {
+    user_id: searchInbox.user_id,
+    name: profile.name || "lead_CRM",
+    avatar: profile.picture,
+    email: "",
+    phone: phone,
+    source: "crm",
+  };
+
+  const createNewLead = await leadModel.createLead({ data: leadData });
+
+  if (!createNewLead) {
+    throw new Error("Error ao criar novo lead.");
+  }
+
+  return createNewLead;
 };

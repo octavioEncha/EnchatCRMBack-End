@@ -9,10 +9,19 @@ import * as messagesService from "../services/messages.service.js";
 export const webhookController = async (req, res) => {
   try {
     const { data, event, instance } = req.body; // 👈 aqui está a diferença
-    const lead = await messagesService.createNewMessage({ data: req.body });
+
+    const result = await messagesService.createNewMessage({
+      data,
+      event,
+      instance,
+    });
+    if (!result) {
+      console.log("❌ Falha ao processar mensagem");
+      return res.status(400).send("Falha ao processar");
+    }
     if (!data?.key) {
       console.log("❌ Dados inválidos recebidos:", req.body);
-      return res.status(200).send("Dados inválidos");
+      return res.status(400).send("Dados inválidos");
     }
 
     const { id: messageId, remoteJid, fromMe } = data.key;
@@ -38,12 +47,12 @@ export const webhookController = async (req, res) => {
 
     const msg = {
       id: messageId,
-      lead_id: lead.lead?.id,
+      lead_id: result.lead?.id,
       direction,
-      user: lead.lead?.name,
+      user: result.lead?.name,
       text,
-      avatar: lead.lead?.avatar,
-      conversation_id: lead.conversation.id,
+      avatar: result.lead?.avatar,
+      conversation_id: result.conversation?.id,
       timestamp: new Date(),
       contact: remoteJid,
     };
