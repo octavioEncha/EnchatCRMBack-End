@@ -15,6 +15,9 @@ export const webhookController = async (req, res) => {
       event,
       instance,
     });
+    console.log("resultado:");
+    console.log(result);
+
     if (!result) {
       console.log("❌ Falha ao processar mensagem");
       return res.status(400).send("Falha ao processar");

@@ -57,12 +57,14 @@ export const createNewMessage = async ({ data, event, instance }) => {
     let lead = await leadsService.searchLead({ phone });
 
     if (!lead) {
-      const createNewLead = await leadsService.createNewLead({
+      lead = await leadsService.createNewLead({
         data,
         phone,
         instance,
       });
     }
+    console.log("lead criado: ");
+    console.log(lead.id);
 
     // Busca ou cria a conversa
     let conversation = await conversationService.searchConversation({
@@ -79,6 +81,8 @@ export const createNewMessage = async ({ data, event, instance }) => {
       }
     }
 
+    console.log(conversation);
+
     // Define tipo de remetente
     const senderType = fromMe ? "user" : "lead";
 
@@ -88,6 +92,7 @@ export const createNewMessage = async ({ data, event, instance }) => {
       lead_id: lead.id,
       messageContent,
     };
+
     const createNewMessage = await messageModel.createMessage({
       data: dataMessage,
     });

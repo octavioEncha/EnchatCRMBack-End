@@ -34,6 +34,9 @@ export const specificMessaByLeadId = async ({ conversationId }) => {
 };
 
 export const createMessage = async ({ data }) => {
+  console.log("O QUE CHEGA");
+  console.log(data);
+
   const { data: insertedMessage, error: insertError } = await supabase
     .from("messages")
     .insert([
@@ -46,6 +49,8 @@ export const createMessage = async ({ data }) => {
     ])
     .select()
     .single();
+  console.log("menssagem criada: ");
+  console.log(insertedMessage);
 
   return insertedMessage;
 };

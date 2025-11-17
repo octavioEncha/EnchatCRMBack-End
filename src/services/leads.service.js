@@ -37,7 +37,6 @@ export const createNewLead = async ({ data, phone, instance }) => {
     }
   );
   const profile = await response.json();
-  console.log(profile);
 
   const leadData = {
     user_id: searchInbox.user_id,

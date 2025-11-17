@@ -29,5 +29,5 @@ export const createNewConversation = async ({ data }) => {
     })
     .select();
 
-  return createNewConversation;
+  return createNewConversation[0];
 };

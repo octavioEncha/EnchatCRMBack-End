@@ -38,5 +38,5 @@ export const createLead = async ({ data }) => {
     ])
     .select();
 
-  return createNewLead;
+  return createNewLead[0];
 };
