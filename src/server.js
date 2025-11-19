@@ -7,6 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
+  allowEIO3: true,
 });
 
 initSocket(io);
@@ -22,3 +23,4 @@ const PORT = 4000;
 server.listen(PORT, () => {
   console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
 });
+
