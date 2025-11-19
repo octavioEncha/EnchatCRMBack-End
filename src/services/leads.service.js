@@ -46,7 +46,9 @@ export const createNewLead = async ({ data, phone, instance }) => {
     phone: phone,
     source: "crm",
   };
-
+  console.log("LEAD CRIADO")
+  console.log(leadData)
+  
   const createNewLead = await leadModel.createLead({ data: leadData });
 
   if (!createNewLead) {
