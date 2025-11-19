@@ -25,8 +25,12 @@ export const createNewLead = async ({ data, phone, instance }) => {
   if (!searchInbox) {
     throw new Error("❌ Erro ao buscar canal:");
   }
+  console.log(phone);
+
+  console.log("Canal encontrado:", searchInbox);
+
   const response = await fetch(
-    `https://edvedder.encha.com.br/fetchProfile/${instance}`,
+    `https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
     {
       method: "POST",
       headers: {
@@ -36,6 +40,8 @@ export const createNewLead = async ({ data, phone, instance }) => {
       body: JSON.stringify({ number: phone }),
     }
   );
+
+  console.log("Response fetchProfile:", response);
   const profile = await response.json();
 
   const leadData = {
@@ -46,9 +52,9 @@ export const createNewLead = async ({ data, phone, instance }) => {
     phone: phone,
     source: "crm",
   };
-  console.log("LEAD CRIADO")
-  console.log(leadData)
-  
+  console.log("LEAD CRIADO");
+  console.log(leadData);
+
   const createNewLead = await leadModel.createLead({ data: leadData });
 
   if (!createNewLead) {
