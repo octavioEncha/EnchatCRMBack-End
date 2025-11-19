@@ -84,7 +84,7 @@ const initSocket = (io) => {
                 integration: "WHATSAPP-BAILEYS",
                 groupsIgnore: true,
                 webhook: {
-                  url: "http://host.docker.internal:4000/webhook",
+                  url: "https://api.enchat.in/webhook",
                   base64: true,
                   events: ["MESSAGES_UPSERT"],
                 },
@@ -430,3 +430,4 @@ const initSocket = (io) => {
 };
 
 export default initSocket;
+
