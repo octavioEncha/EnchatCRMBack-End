@@ -15,24 +15,7 @@ global.io = io;
 
 //INICIALIZAÇÃO
 app.get("/", async (req, res) => {
-  try {
-    const response = await fetch(
-      "http://localhost:8081/instance/connectionState/teste",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: "meu_token_secreto",
-        },
-        //body: JSON.stringify({ number: to, text }),
-      }
-    );
-    const data = await response.json();
-
-    res.status(200).json(data);
-  } catch (error) {
-    res.status(400).send("TO AQUI CARAI");
-  }
+  res.status(200).json({ message: "Server is running" });
 });
 
 const PORT = 4000;
