@@ -7,8 +7,8 @@ import {
 } from "../services/messages.service.js";
 import { searchLeadId } from "../services/leads.service.js";
 
-const EVOLUTION_API = "http://localhost:8081";
-const API_KEY = "meu_token_secreto";
+const EVOLUTION_API = "https://edvedder.encha.com.br";
+const API_KEY = "04e17cf6a68786ac0ff59bf9fcd81029";
 
 const initSocket = (io) => {
   io.on("connection", (socket) => {
