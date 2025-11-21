@@ -9,3 +9,11 @@ export const searchInbox = async ({ instance }) => {
 
   return searchInbox;
 };
+
+export const createNewInbox = async ({ user_id }) => {
+  const { data: newInbox, error: errorNew } = await supabase
+    .from("integration_channels")
+    .insert({ user_id, provider: "whatsapp" });
+
+  return true;
+};

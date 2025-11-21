@@ -9,7 +9,7 @@ import * as messagesService from "../services/messages.service.js";
 export const webhookController = async (req, res) => {
   try {
     const { data, event, instance } = req.body; // 👈 aqui está a diferença
-
+    console.log("🔔 Webhook recebido:", req.body);
     const result = await messagesService.createNewMessage({
       data,
       event,
@@ -63,15 +63,18 @@ export const webhookController = async (req, res) => {
     console.log(`💬 Nova mensagem (${direction}):`, msg);
 
     // Salva e envia para todas as sessões
-    for (const sessionId in sessions) {
-      const session = sessions[sessionId];
+    const sessionId = instance; // precisa existir no result
+
+    if (!sessionId || !sessions[sessionId]) {
+      console.warn("⚠️ Sessão não encontrada para enviar mensagem:", sessionId);
+    } else {
       ensureContact(sessionId, remoteJid, pushName);
       saveMessage(sessionId, remoteJid, msg);
 
       const eventName =
         direction === "outgoing" ? "outgoing_message" : "incoming_message";
 
-      global.io.to(session.socketId).emit(eventName, msg);
+      global.io.to(sessions[sessionId].socketId).emit(eventName, msg);
     }
 
     // 🔥 Cria registro no Supabase (ou outra persistência)

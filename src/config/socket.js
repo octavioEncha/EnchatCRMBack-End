@@ -6,9 +6,12 @@ import {
   createNewMessage,
 } from "../services/messages.service.js";
 import { searchLeadId } from "../services/leads.service.js";
+import { createNewInbox } from "../services/inbox.service.js";
 
-const EVOLUTION_API = "https://edvedder.encha.com.br";
-const API_KEY = "04e17cf6a68786ac0ff59bf9fcd81029";
+//const EVOLUTION_API = "https://edvedder.encha.com.br";
+const EVOLUTION_API = "http://localhost:8081";
+//const API_KEY = "04e17cf6a68786ac0ff59bf9fcd81029";
+const API_KEY = "meu_token_secreto";
 
 const initSocket = (io) => {
   io.on("connection", (socket) => {
@@ -70,6 +73,10 @@ const initSocket = (io) => {
         if (checkData.error === "Not Found") {
           console.log("📦 Criando nova instância:", sessionId);
 
+          const createInbox = await createNewInbox({
+            user_id: sessionId,
+          });
+
           const createResponse = await fetch(
             `${EVOLUTION_API}/instance/create`,
             {
@@ -84,7 +91,8 @@ const initSocket = (io) => {
                 integration: "WHATSAPP-BAILEYS",
                 groupsIgnore: true,
                 webhook: {
-                  url: "https://api.enchat.in/webhook",
+                  //url: "https://api.enchat.in/webhook",
+                  url: "http://host.docker.internal:4000/webhook",
                   base64: true,
                   events: ["MESSAGES_UPSERT"],
                 },
@@ -430,4 +438,3 @@ const initSocket = (io) => {
 };
 
 export default initSocket;
-
