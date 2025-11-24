@@ -46,7 +46,9 @@ export const createNewLead = async ({ data, phone, instance }) => {
   const leadData = {
     user_id: searchInbox.user_id,
     name: profile.name || "lead_CRM",
-    avatar: profile.picture,
+    avatar:
+      profile.picture ||
+      "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
     email: "",
     phone: phone,
     source: "crm",
