@@ -1,8 +1,11 @@
 import { supabase } from "../config/supabaseClient.js";
 import * as leadsService from "./leads.service.js";
 import * as conversationService from "./conversation.service.js";
+import { findProfileById } from "../services/profile.service.js";
+import { sendingWebhookMessage } from "./webhook.service.js";
 
 import * as messageModel from "../models/message.model.js";
+import * as attachmentModel from "../models/attachments.model.js";
 
 /**
  * Retorna todas as mensagens de uma conversa específica
@@ -40,15 +43,18 @@ export const specificMessaByLeadId = async ({ lead_id }) => {
  */
 export const createNewMessage = async ({ data, event, instance }) => {
   try {
-    const remoteJidRaw = data?.key?.remoteJid;
-    const phone = remoteJidRaw ? remoteJidRaw.replace(/\D/g, "") : null;
     const messageContent =
       data?.message?.conversation ||
       data?.message?.extendedTextMessage?.text ||
+      data?.message?.base64 ||
       "";
+    const remoteJidRaw = data?.key?.remoteJid;
+    const phone = remoteJidRaw ? remoteJidRaw.replace(/\D/g, "") : null;
+    const sourceType = data?.messageType;
+
     const fromMe = data?.key?.fromMe;
 
-    if (!phone || !messageContent) {
+    if (!phone) {
       console.warn("⚠️ Dados insuficientes:", { phone, messageContent });
       return null;
     }
@@ -63,8 +69,6 @@ export const createNewMessage = async ({ data, event, instance }) => {
         instance,
       });
     }
-    console.log("lead criado: ");
-    console.log(lead.id);
 
     // Busca ou cria a conversa
     let conversation = await conversationService.searchConversation({
@@ -81,32 +85,72 @@ export const createNewMessage = async ({ data, event, instance }) => {
       }
     }
 
-    console.log(conversation);
-
-    // Define tipo de remetente
+    // Define tipo de remetentecd
     const senderType = fromMe ? "user" : "lead";
 
-    const dataMessage = {
-      conversation_id: conversation.id,
-      senderType,
-      lead_id: lead.id,
-      messageContent,
-    };
+    let dataMessage = {};
 
-    const createNewMessage = await messageModel.createMessage({
-      data: dataMessage,
-    });
+    let createNewMessage = null;
 
-    if (!createNewMessage) {
-      throw new Error("Falha ao criar nova mensagem.");
+    if (
+      sourceType === "documentMessage" ||
+      sourceType === "audioMessage" ||
+      sourceType === "imageMessage"
+    ) {
+      const buffer = Buffer.from(messageContent, "base64");
+      const mymeTypeMap = {
+        documentMessage: "application/pdf",
+        audioMessage: "audio/mpeg",
+        imageMessage: "image/jpeg",
+      };
+      const contentType = mymeTypeMap[sourceType] || "application/octet-stream";
+      const uploadResult = await attachmentModel.uploadAttachment({
+        buffer,
+        contentType,
+      });
+      dataMessage = {
+        conversation_id: conversation.id,
+        senderType,
+        lead_id: lead.id,
+        attachmentUrl: uploadResult,
+        messageType: sourceType,
+      };
+
+      createNewMessage = await messageModel.createMessageWithAttachment({
+        data: dataMessage,
+      });
+    } else {
+      dataMessage = {
+        conversation_id: conversation.id,
+        senderType,
+        lead_id: lead.id,
+        messageContent,
+      };
+      createNewMessage = await messageModel.createMessage({
+        data: dataMessage,
+      });
+
+      if (!createNewMessage) {
+        throw new Error("Falha ao criar nova mensagem.");
+      }
     }
-
     const updateLastMessageTimestamp =
       await messageModel.updateLastMessageTimestamp({
         conversationId: conversation.id,
       });
+    if (conversation.ai_enabled) {
+      const profile = await findProfileById({ id: instance });
+      const sendingWebhook = await sendingWebhookMessage({
+        webhookURL: profile.webhook_url,
+        content: dataMessage,
+      });
+    }
 
-    return { lead, conversation, message: createNewMessage };
+    return {
+      lead,
+      conversation,
+      message: createNewMessage,
+    };
   } catch (err) {
     console.error("❌ Erro inesperado em createNewMessage:", err.message);
     return null;

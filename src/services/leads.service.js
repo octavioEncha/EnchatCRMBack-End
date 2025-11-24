@@ -27,14 +27,14 @@ export const createNewLead = async ({ data, phone, instance }) => {
   }
 
   const response = await fetch(
-    //`https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
-    `http://localhost:8081/chat/fetchProfile/${instance}`,
+    `https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
+    //`http://localhost:8081/chat/fetchProfile/${instance}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        //apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
-        apikey: "meu_token_secreto",
+        apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
+        //apikey: "meu_token_secreto",
       },
       body: JSON.stringify({ number: phone }),
     }

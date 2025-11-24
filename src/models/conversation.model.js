@@ -31,3 +31,13 @@ export const createNewConversation = async ({ data }) => {
 
   return createNewConversation[0];
 };
+
+export const searchConversationId = async ({ id }) => {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  return data;
+};

@@ -62,3 +62,11 @@ export const createNewConversation = async ({ data }) => {
     return null;
   }
 };
+
+export const searchConversationId = async ({ id }) => {
+  const searchConversation = await conversationModels.searchConversationId({
+    id,
+  });
+
+  return searchConversation;
+};

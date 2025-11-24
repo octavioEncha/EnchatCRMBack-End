@@ -8,10 +8,10 @@ import {
 import { searchLeadId } from "../services/leads.service.js";
 import { createNewInbox } from "../services/inbox.service.js";
 
-//const EVOLUTION_API = "https://edvedder.encha.com.br";
-const EVOLUTION_API = "http://localhost:8081";
-//const API_KEY = "04e17cf6a68786ac0ff59bf9fcd81029";
-const API_KEY = "meu_token_secreto";
+const EVOLUTION_API = "https://edvedder.encha.com.br";
+//const EVOLUTION_API = "http://localhost:8081";
+const API_KEY = "04e17cf6a68786ac0ff59bf9fcd81029";
+//const API_KEY = "meu_token_secreto";
 
 const initSocket = (io) => {
   io.on("connection", (socket) => {
@@ -91,8 +91,8 @@ const initSocket = (io) => {
                 integration: "WHATSAPP-BAILEYS",
                 groupsIgnore: true,
                 webhook: {
-                  //url: "https://api.enchat.in/webhook",
-                  url: "http://host.docker.internal:4000/webhook",
+                  url: "https://api.enchat.in/webhook",
+                  //url: "http://host.docker.internal:4000/webhook",
                   base64: true,
                   events: ["MESSAGES_UPSERT"],
                 },

@@ -34,9 +34,6 @@ export const specificMessaByLeadId = async ({ conversationId }) => {
 };
 
 export const createMessage = async ({ data }) => {
-  console.log("O QUE CHEGA");
-  console.log(data);
-
   const { data: insertedMessage, error: insertError } = await supabase
     .from("messages")
     .insert([
@@ -49,8 +46,6 @@ export const createMessage = async ({ data }) => {
     ])
     .select()
     .single();
-  console.log("menssagem criada: ");
-  console.log(insertedMessage);
 
   return insertedMessage;
 };
@@ -101,6 +96,25 @@ export const createNewMessageSendCRM = async ({
         sender_type: "user",
         sender_id: lead_id,
         content,
+      },
+    ])
+    .select()
+    .single();
+
+  return insertedMessage;
+};
+
+export const createMessageWithAttachment = async ({ data }) => {
+  const { data: insertedMessage, error: insertError } = await supabase
+    .from("messages")
+    .insert([
+      {
+        conversation_id: data.conversation_id,
+        sender_type: data.senderType,
+        sender_id: data.lead_id,
+        content: data.attachmentUrl,
+        attachment_type: data.messageType,
+        has_attachment: true,
       },
     ])
     .select()

@@ -8,34 +8,26 @@ import * as messagesService from "../services/messages.service.js";
 
 export const webhookController = async (req, res) => {
   try {
-    const { data, event, instance } = req.body; // 👈 aqui está a diferença
-    console.log("🔔 Webhook recebido:", req.body);
+    const { data, event, instance } = req.body;
+
     const result = await messagesService.createNewMessage({
       data,
       event,
       instance,
     });
-    console.log("resultado:");
-    console.log(result);
 
     if (!result) {
       console.log("❌ Falha ao processar mensagem");
       return res.status(400).send("Falha ao processar");
     }
+
     if (!data?.key) {
       console.log("❌ Dados inválidos recebidos:", req.body);
       return res.status(400).send("Dados inválidos");
     }
 
     const { id: messageId, remoteJid, fromMe } = data.key;
-
-    // Evita processar mensagens repetidas
-    if (processedMessageIds.has(messageId))
-      return res.status(200).send("Duplicada");
-
-    processedMessageIds.add(messageId);
-
-    // Extrai o texto (formato Evolution API)
+    console.log(remoteJid);
     const text =
       data.message?.conversation ||
       data.message?.extendedTextMessage?.text ||
@@ -43,41 +35,47 @@ export const webhookController = async (req, res) => {
       data.message?.videoMessage?.caption ||
       null;
 
-    const pushName = data.pushName || "Desconhecido";
-    if (!text || !remoteJid) return res.status(200).send("Sem texto");
-
     const direction = fromMe ? "outgoing" : "incoming";
 
-    const msg = {
-      id: messageId,
+    // ------------------------------------------------------------
+    // 🔥 Monta a mensagem completa para enviar ao FRONT-END
+    // ------------------------------------------------------------
+
+    const finalMessage = {
+      id: result.message?.id || messageId,
+      conversation_id: result.conversation?.id,
       lead_id: result.lead?.id,
       direction,
+      text: result.message?.content || text,
+      hasAttachment: result.message?.has_attachment || false,
+      attachmentUrl: result.message?.content?.startsWith("http")
+        ? result.message?.content
+        : null,
+      attachmentType: result.message?.attachment_type || null,
       user: result.lead?.name,
-      text,
       avatar: result.lead?.avatar,
-      conversation_id: result.conversation?.id,
       timestamp: new Date(),
       contact: remoteJid,
     };
 
-    console.log(`💬 Nova mensagem (${direction}):`, msg);
+    //console.log("📨 Enviando ao front:", finalMessage);
 
-    // Salva e envia para todas as sessões
-    const sessionId = instance; // precisa existir no result
+    // ------------------------------------------------------------
+    // 🔥 Envia ao WebSocket correto
+    // ------------------------------------------------------------
+    const sessionId = instance;
 
     if (!sessionId || !sessions[sessionId]) {
-      console.warn("⚠️ Sessão não encontrada para enviar mensagem:", sessionId);
+      console.warn("⚠️ Sessão não encontrada:", sessionId);
     } else {
-      ensureContact(sessionId, remoteJid, pushName);
-      saveMessage(sessionId, remoteJid, msg);
+      ensureContact(sessionId, remoteJid, result.lead?.name);
+      saveMessage(sessionId, remoteJid, finalMessage);
 
       const eventName =
         direction === "outgoing" ? "outgoing_message" : "incoming_message";
 
-      global.io.to(sessions[sessionId].socketId).emit(eventName, msg);
+      global.io.to(sessions[sessionId].socketId).emit(eventName, finalMessage);
     }
-
-    // 🔥 Cria registro no Supabase (ou outra persistência)
 
     return res.status(200).send("OK");
   } catch (error) {

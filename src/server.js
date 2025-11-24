@@ -2,6 +2,9 @@ import http from "http";
 import { Server } from "socket.io";
 import app from "./app.js";
 import initSocket from "./config/socket.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const server = http.createServer(app);
 
@@ -23,4 +26,3 @@ const PORT = 4000;
 server.listen(PORT, () => {
   console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
 });
-
