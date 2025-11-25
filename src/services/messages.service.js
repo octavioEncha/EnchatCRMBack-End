@@ -48,7 +48,18 @@ export const createNewMessage = async ({ data, event, instance }) => {
       data?.message?.extendedTextMessage?.text ||
       data?.message?.base64 ||
       "";
-    const remoteJidRaw = data?.key?.remoteJid;
+    let remoteJidRaw = "";
+    let lid = "";
+
+    if (data?.key?.remoteJid.endsWith("@s.whatsapp.net")) {
+      remoteJidRaw = data?.key?.remoteJid;
+      lid = data?.key?.remoteJidAlt.replace(/\D/g, "");
+      console.log("veio normal");
+    } else {
+      remoteJidRaw = data?.key?.remoteJidAlt;
+      lid = data?.key?.remoteJid.replace(/\D/g, "");
+    }
+
     const phone = remoteJidRaw ? remoteJidRaw.replace(/\D/g, "") : null;
     const sourceType = data?.messageType;
 
@@ -67,6 +78,7 @@ export const createNewMessage = async ({ data, event, instance }) => {
         data,
         phone,
         instance,
+        lid,
       });
     }
 

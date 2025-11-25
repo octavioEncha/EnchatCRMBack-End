@@ -34,6 +34,7 @@ export const createLead = async ({ data }) => {
         email: "",
         phone: data.phone,
         source: "crm",
+        lid: data.lid,
       },
     ])
     .select();

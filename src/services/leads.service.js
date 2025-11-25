@@ -18,7 +18,7 @@ export const searchLeadId = async ({ id }) => {
   return searchLeadId;
 };
 
-export const createNewLead = async ({ data, phone, instance }) => {
+export const createNewLead = async ({ data, phone, instance, lid }) => {
   // remove tudo que não for número
   const searchInbox = await inboxModel.searchInbox({ instance });
 
@@ -52,9 +52,8 @@ export const createNewLead = async ({ data, phone, instance }) => {
     email: "",
     phone: phone,
     source: "crm",
+    lid,
   };
-  console.log("LEAD CRIADO");
-  console.log(leadData);
 
   const createNewLead = await leadModel.createLead({ data: leadData });
 
