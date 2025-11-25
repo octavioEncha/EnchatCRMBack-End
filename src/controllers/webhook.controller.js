@@ -55,7 +55,7 @@ export const webhookController = async (req, res) => {
       user: result.lead?.name,
       avatar: result.lead?.avatar,
       timestamp: new Date(),
-      contact: remoteJid,
+      contact: result.lead.phone,
     };
 
     //console.log("📨 Enviando ao front:", finalMessage);
