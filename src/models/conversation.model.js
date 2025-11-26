@@ -26,6 +26,7 @@ export const createNewConversation = async ({ data }) => {
     .insert({
       user_id: data.user_id,
       lead_id: data.lead_id,
+      ai_enabled: data.is_active,
     })
     .select();
 

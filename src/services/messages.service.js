@@ -89,7 +89,7 @@ export const createNewMessage = async ({ data, event, instance }) => {
 
     if (!conversation) {
       conversation = await conversationService.createNewConversation({
-        data: { user_id: lead.user_id, lead_id: lead.id },
+        data: { user_id: lead.user_id, lead_id: lead.id, instance },
       });
       if (!conversation) {
         console.warn("⚠️ Falha ao criar conversa.");

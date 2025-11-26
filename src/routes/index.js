@@ -7,6 +7,7 @@ import leadRoutes from "./lead.route.js";
 import shootingRoutes from "./shooting.route.js";
 import apiRoutes from "./api.route.js";
 import profileRoutes from "./profile.routes.js";
+import aiConfigurationRoutes from "./aiConfigurations.route.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/", leadRoutes);
 router.use("/", shootingRoutes);
 router.use("/api", apiRoutes);
 router.use("/", profileRoutes);
+router.use("/ai-config", aiConfigurationRoutes);
 
 export default router; // 👈 ESSA LINHA É FUNDAMENTAL

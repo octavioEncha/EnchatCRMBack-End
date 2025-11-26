@@ -1,5 +1,6 @@
 import * as conversationModels from "../models/conversation.model.js";
 import * as messageModels from "../models/message.model.js";
+import { findProfileById } from "./profile.service.js";
 
 export const listAllConversation = async ({ user_id }) => {
   try {
@@ -51,6 +52,12 @@ export const searchConversation = async ({ lead_id }) => {
 
 export const createNewConversation = async ({ data }) => {
   try {
+    const aiConfigurationByProfile = await findProfileById({
+      id: data.instance,
+    });
+
+    data.is_active = aiConfigurationByProfile.ia_active;
+
     const createNewConversation =
       await conversationModels.createNewConversation({
         data,
