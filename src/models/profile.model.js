@@ -10,6 +10,16 @@ export const findProfileById = async ({ id }) => {
   return profile;
 };
 
+export const findUserByEmail = async ({ email }) => {
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("email", email)
+    .single();
+
+  return profile;
+};
+
 export const updateTokenProfile = async ({ id, token }) => {
   const { data: profile, error } = await supabase
     .from("profiles")

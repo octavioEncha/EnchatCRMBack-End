@@ -7,6 +7,15 @@ export const findProfileById = async ({ id }) => {
   return profile;
 };
 
+export const findProfileByEmail = async ({ email }) => {
+  const profile = await profileModel.findUserByEmail({ email });
+
+  if (!profile) {
+    throw new Error("E-mail not found");
+  }
+  return profile;
+};
+
 export const createToken = async ({ data }) => {
   const findProfile = await profileModel.findProfileById({
     id: data.id_profile,
