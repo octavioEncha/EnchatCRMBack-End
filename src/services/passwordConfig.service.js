@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { findProfileByEmail } from "./profile.service.js";
-import { sendEmail } from "../utils/sendingEmail.util.js";
+import { sendEmailRecoveryPassword } from "../utils/sendingEmail.util.js";
 import * as passwordResetModel from "../models/passwordReset.model.js";
 
 export const forgot_password = async ({ data }) => {
@@ -12,7 +12,7 @@ export const forgot_password = async ({ data }) => {
 
   const expiresAt = new Date();
 
-  const sendEmailToEmail = sendEmail({ to: data.email, token });
+  const sendEmailToEmail = sendEmailRecoveryPassword({ to: data.email, token });
 
   const dataToSaveToken = {
     email: data.email,

@@ -1,4 +1,5 @@
 import * as profileModel from "../models/profile.model.js";
+import { sendEmailConfirmRegistration } from "../utils/sendingEmail.util.js";
 import jwt from "jsonwebtoken";
 
 export const findProfileById = async ({ id }) => {
@@ -33,4 +34,27 @@ export const createToken = async ({ data }) => {
     token,
   });
   return token;
+};
+
+export const signUpProfile = async ({ data }) => {
+  const searchProfile = await profileModel.findUserByEmail({
+    email: data.email,
+  });
+  console.log(searchProfile);
+
+  if (searchProfile) {
+    throw new Error("E-mail already exist");
+  }
+
+  const createProfile = await profileModel.createUser({ data });
+
+  const updateProfileNam = await profileModel.updateProfileName({
+    id: createProfile.user?.id,
+    name: data.name,
+  });
+
+  return await sendEmailConfirmRegistration({
+    to: data.email,
+    name: data.name,
+  });
 };

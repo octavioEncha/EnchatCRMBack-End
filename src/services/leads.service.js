@@ -1,8 +1,10 @@
 import * as leadModel from "../models/lead.model.js";
 import * as inboxModel from "../models/inbox.model.js";
+import { searchPipelineIsdefault } from "./pipeline.service.js";
 
-export const searchLead = async ({ phone }) => {
-  const lead = await leadModel.searchLeadPhone({ phone });
+//ARRUMAR PARA ALÉM DE ENVIAR O NÚMERO, ENVIAR O USER_ID
+export const searchLead = async ({ phone, instance }) => {
+  const lead = await leadModel.searchLeadPhone({ phone, instance });
 
   return lead;
 };
@@ -26,6 +28,10 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
     throw new Error("❌ Erro ao buscar canal:");
   }
 
+  const searchPipeline = await searchPipelineIsdefault({
+    user_id: searchInbox.user_id,
+  });
+
   const response = await fetch(
     `https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
     //`http://localhost:8081/chat/fetchProfile/${instance}`,
@@ -41,11 +47,10 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
   );
 
   const profile = await response.json();
-  console.log(profile);
 
   const leadData = {
     user_id: searchInbox.user_id,
-    name: profile.name || "lead_CRM",
+    name: profile.name || phone,
     avatar:
       profile.picture ||
       "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
@@ -53,6 +58,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
     phone: phone,
     source: "crm",
     lid,
+    pipeline_id: searchPipeline.id,
   };
 
   const createNewLead = await leadModel.createLead({ data: leadData });

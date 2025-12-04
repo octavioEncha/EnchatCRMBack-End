@@ -5,4 +5,6 @@ const router = Router();
 
 router.post("/token", profileController.generateTokenToUser);
 
+router.post("/sign-up", profileController.signUpProfile);
+
 export default router;

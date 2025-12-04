@@ -105,6 +105,8 @@ export const createNewMessageSendCRM = async ({
 };
 
 export const createMessageWithAttachment = async ({ data }) => {
+  console.log(data);
+
   const { data: insertedMessage, error: insertError } = await supabase
     .from("messages")
     .insert([

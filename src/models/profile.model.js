@@ -31,3 +31,33 @@ export const updateTokenProfile = async ({ id, token }) => {
 
   return profile;
 };
+
+export const createUser = async ({ data }) => {
+  const { data: createProfile, error } = await supabase.auth.signUp({
+    email: data.email,
+    password: data.password,
+    options: {
+      data: {
+        name: data.name,
+      },
+    },
+  });
+
+  if (error) throw new Error(error);
+
+  return createProfile;
+};
+
+export const updateProfileName = async ({ id, name }) => {
+  const { data: updateProfile, error } = await supabase
+    .from("profiles")
+    .update({
+      display_name: name,
+    })
+    .eq("id", id)
+    .single();
+
+  if (error) throw new Error(error);
+
+  return updateProfile;
+};

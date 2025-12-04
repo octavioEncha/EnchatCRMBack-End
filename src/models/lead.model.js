@@ -1,10 +1,11 @@
 import { supabase } from "../config/supabaseClient.js";
 
-export const searchLeadPhone = async ({ phone }) => {
+export const searchLeadPhone = async ({ phone, instance }) => {
   const { data, error } = await supabase
     .from("leads")
     .select("*")
     .eq("phone", phone)
+    .eq("user_id", instance)
     .maybeSingle(); // ✅ retorna null se não encontrar
   if (error) {
     console.error("❌ Erro ao buscar lead:", error.message);
@@ -35,6 +36,7 @@ export const createLead = async ({ data }) => {
         phone: data.phone,
         source: "crm",
         lid: data.lid,
+        pipeline_id: data.pipeline_id,
       },
     ])
     .select();

@@ -71,7 +71,7 @@ export const createNewMessage = async ({ data, event, instance }) => {
     }
 
     // Busca ou cria o lead
-    let lead = await leadsService.searchLead({ phone });
+    let lead = await leadsService.searchLead({ phone, instance });
 
     if (!lead) {
       lead = await leadsService.createNewLead({
@@ -107,25 +107,35 @@ export const createNewMessage = async ({ data, event, instance }) => {
     if (
       sourceType === "documentMessage" ||
       sourceType === "audioMessage" ||
-      sourceType === "imageMessage"
+      sourceType === "imageMessage" ||
+      sourceType === "stickerMessage" ||
+      sourceType === "videoMessage"
     ) {
       const buffer = Buffer.from(messageContent, "base64");
       const mymeTypeMap = {
         documentMessage: "application/pdf",
         audioMessage: "audio/mpeg",
         imageMessage: "image/jpeg",
+        videoMessage: "video/mp4",
+        stickerMessage: "image/jpeg",
       };
       const contentType = mymeTypeMap[sourceType] || "application/octet-stream";
       const uploadResult = await attachmentModel.uploadAttachment({
         buffer,
         contentType,
       });
+
+      let messageType = sourceType;
+
+      if (sourceType === "stickerMessage") {
+        messageType = "imageMessage";
+      }
       dataMessage = {
         conversation_id: conversation.id,
         senderType,
         lead_id: lead.id,
         attachmentUrl: uploadResult,
-        messageType: sourceType,
+        messageType,
       };
 
       createNewMessage = await messageModel.createMessageWithAttachment({
@@ -170,9 +180,13 @@ export const createNewMessage = async ({ data, event, instance }) => {
 };
 
 // Cria uma mensagem enviada pelo disparo no CRM
-export const createMessageForShootingToLead = async ({ phone, content }) => {
+export const createMessageForShootingToLead = async ({
+  phone,
+  content,
+  instance,
+}) => {
   try {
-    let lead = await leadsService.searchLead({ phone });
+    let lead = await leadsService.searchLead({ phone, instance });
 
     let conversation = await conversationService.searchConversation({
       lead_id: lead.id,
@@ -206,7 +220,9 @@ export const createMessageForShootingToLead = async ({ phone, content }) => {
 /**
  * Cria nova mensagem enviada manualmente pelo CRM (via interface)
  */
-export const createNewMessageSendCRM = async ({ data }) => {
+export const createNewMessageSendCRM = async ({ data, instance }) => {
+  console.log(data);
+
   try {
     const phone = data?.key?.remoteJid?.replace(/\D/g, "");
     const content = data?.message?.conversation;
@@ -217,7 +233,10 @@ export const createNewMessageSendCRM = async ({ data }) => {
     }
 
     // Busca ou cria o lead
-    let lead = await leadsService.searchLead({ phone });
+    let lead = await leadsService.searchLead({
+      phone,
+      instance: data.instance,
+    });
     if (!lead) {
       lead = await leadsService.createNewLead({ data, phone });
       if (!lead) {

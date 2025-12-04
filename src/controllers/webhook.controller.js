@@ -15,6 +15,7 @@ export const webhookController = async (req, res) => {
       event,
       instance,
     });
+    console.log(result);
 
     if (!result) {
       console.log("❌ Falha ao processar mensagem");
@@ -56,9 +57,10 @@ export const webhookController = async (req, res) => {
       avatar: result.lead?.avatar,
       timestamp: new Date(),
       contact: result.lead.phone,
+      ai_enabled: result.conversation.ai_enabled,
     };
 
-    //console.log("📨 Enviando ao front:", finalMessage);
+    console.log("📨 Enviando ao front:", finalMessage);
 
     // ------------------------------------------------------------
     // 🔥 Envia ao WebSocket correto

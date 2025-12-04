@@ -409,6 +409,7 @@ const initSocket = (io) => {
           console.error(`⚠️ Falha ao enviar (${sendResponse.status})`);
         else {
           const data = await sendResponse.json();
+          data.instance = sessionId;
           const createMessageCRM = await createNewMessageSendCRM({ data });
 
           console.log(`✅ Enviado para Evolution (${to})`);

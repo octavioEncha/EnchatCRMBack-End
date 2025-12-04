@@ -1,5 +1,7 @@
 import http from "http";
 import { Server } from "socket.io";
+import "./utils/scheduler.js";
+
 import app from "./app.js";
 import initSocket from "./config/socket.js";
 import dotenv from "dotenv";

@@ -22,7 +22,7 @@ export const shootingToLead = async ({ data }) => {
   }
 
   const createMessageInDB = await messageService.createMessageForShootingToLead(
-    { phone: data.number, content: data.text }
+    { phone: data.number, content: data.text, instance: data.user }
   );
 
   return;
