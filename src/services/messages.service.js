@@ -192,6 +192,16 @@ export const createMessageForShootingToLead = async ({
       lead_id: lead.id,
     });
 
+    if (!conversation) {
+      conversation = await conversationService.createNewConversation({
+        data: {
+          user_id: lead.user_id,
+          lead_id: lead.id,
+          instance,
+        },
+      });
+    }
+
     const createMessageForShootingToLead =
       await messageModel.createMessageForShootingToLead({
         content,

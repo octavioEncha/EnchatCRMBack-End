@@ -1,6 +1,6 @@
 import { supabase } from "../config/supabaseClient.js";
 
-const searchPipelineIsdefault = async ({ user_id }) => {
+export const searchPipelineIsdefault = async ({ user_id }) => {
   const { data, error } = await supabase
     .from("pipelines")
     .select("*")
@@ -13,5 +13,14 @@ const searchPipelineIsdefault = async ({ user_id }) => {
   return data;
 };
 
-export { searchPipelineIsdefault };
-``;
+export const seachPipelineById = async ({ id }) => {
+  const { data, error } = await supabase
+    .from("pipelines")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data;
+};

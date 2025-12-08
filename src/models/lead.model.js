@@ -32,14 +32,22 @@ export const createLead = async ({ data }) => {
         user_id: data.user_id,
         name: data.name,
         avatar: data.avatar,
-        email: "",
+        email: data.email || "",
         phone: data.phone,
         source: "crm",
         lid: data.lid,
         pipeline_id: data.pipeline_id,
+        company: data.company || "",
+        value: data.value || "",
+        notes: data.notes || "",
+        tags: data.tags || [], // <--- ADICIONE ISSO
       },
     ])
     .select();
+
+  if (errorInsert) {
+    throw new Error(errorInsert.message);
+  }
 
   return createNewLead[0];
 };

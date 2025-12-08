@@ -8,3 +8,11 @@ export const searchPipelineIsdefault = async ({ user_id }) => {
     throw new Error("Not found pipeline is default by user id");
   return searchPipeline;
 };
+
+export const seachPipelineById = async ({ id }) => {
+  const searchPipeline = await pipelinesModel.seachPipelineById({ id });
+
+  if (!searchPipeline) throw new Error("Pipeline not found ");
+
+  return searchPipeline;
+};
