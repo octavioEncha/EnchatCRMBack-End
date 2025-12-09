@@ -21,16 +21,37 @@ export const searchConversation = async ({ lead_id }) => {
 };
 
 export const createNewConversation = async ({ data }) => {
-  const { data: createNewConversation, error } = await supabase
+  const { data: convData, error: errorInsert } = await supabase
     .from("conversations")
     .insert({
       user_id: data.user_id,
       lead_id: data.lead_id,
       ai_enabled: data.is_active,
     })
-    .select();
+    .select()
+    .maybeSingle();
 
-  return createNewConversation[0];
+  // ⚠️ Erro ao inserir
+  if (errorInsert) {
+    // 🔥 Erro de duplicado
+    if (errorInsert.code === "23505") {
+      console.log("⚠️ Conversa já existe. Retornando conversa existente…");
+
+      const { data: existingConv } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("user_id", data.user_id)
+        .eq("lead_id", data.lead_id)
+        .maybeSingle();
+
+      return existingConv;
+    }
+
+    // outros erros
+    throw new Error(errorInsert.message);
+  }
+
+  return convData;
 };
 
 export const searchConversationId = async ({ id }) => {

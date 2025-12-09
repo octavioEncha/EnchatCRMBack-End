@@ -122,8 +122,8 @@ export const sendEmailRecoveryPassword = async ({ to, token }) => {
   }
 };
 
-export const sendEmailConfirmRegistration = async ({ to, name }) => {
-  const baseURL = `${process.env.APP_URL}`;
+export const sendEmailConfirmRegistration = async ({ to, name, id }) => {
+  const baseURL = `${process.env.APP_URL}/auth?user_id=${id}`;
 
   const conteudoHTML = `
     <!DOCTYPE html>

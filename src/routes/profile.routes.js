@@ -7,4 +7,6 @@ router.post("/token", profileController.generateTokenToUser);
 
 router.post("/sign-up", profileController.signUpProfile);
 
+router.get("/enabled-profile/:id", profileController.enabledProfile);
+
 export default router;

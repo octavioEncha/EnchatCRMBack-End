@@ -7,6 +7,12 @@ import { sendingWebhookMessage } from "./webhook.service.js";
 import * as messageModel from "../models/message.model.js";
 import * as attachmentModel from "../models/attachments.model.js";
 
+import {
+  sessions,
+  ensureContact,
+  saveMessage,
+} from "../services/session.service.js";
+
 /**
  * Retorna todas as mensagens de uma conversa específica
  */
@@ -290,4 +296,83 @@ export const createNewMessageSendCRM = async ({ data, instance }) => {
     console.error("❌ Erro em createNewMessageSendCRM:", err.message);
     return null;
   }
+};
+
+export const sendMessage = async ({ data }) => {
+  const searchLead = await leadsService.searchLeadId({ id: data.lead_id });
+  console.log(searchLead);
+  let searchConvers = await conversationService.searchConversation({
+    lead_id: data.lead_id,
+  });
+  if (!searchConvers) {
+    const leadData = {
+      instance: data.user_id,
+      user_id: data.user_id,
+      lead_id: data.lead_id,
+    };
+    searchConvers = await conversationService.createNewConversation({
+      data: leadData,
+    });
+  }
+
+  const response = await fetch(
+    `https://edvedder.encha.com.br/message/sendText/${data.user_id}`,
+    //`http://localhost:8081/message/sendText/${data.user}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
+        //apikey: "meu_token_secreto",
+      },
+      body: JSON.stringify({
+        number: searchLead.phone,
+        text: data.content,
+      }),
+    }
+  );
+
+  const dataResponse = await response.json();
+  if (dataResponse?.response?.message[0]?.exists === false) {
+    throw new Error("Number not found or not exist");
+  }
+
+  const createNewMessage = await messageModel.createNewMessageSendCRM({
+    content: data.content,
+    lead_id: searchLead.id,
+    conversation_id: searchConvers.id,
+  });
+  if (!createNewMessage) {
+    throw new Error("Falha ao criar nova mensagem via CRM.");
+  }
+
+  const updateLastMessageTimestamp =
+    await messageModel.updateLastMessageTimestamp({
+      conversationId: searchConvers.id,
+    });
+
+  const finalMessage = {
+    id: createNewMessage.id,
+    conversation_id: searchConvers.id,
+    lead_id: searchLead.id,
+    direction: "outgoing",
+    text: data.content,
+    user: searchLead.name,
+    avatar: searchLead.avatar,
+    timestamp: new Date(),
+    contact: searchLead.phone,
+    ai_enabled: searchConvers.ai_enabled,
+  };
+
+  if (!data.user_id || !sessions[data.user_id]) {
+    console.warn("⚠️ Sessão não encontrada:", data.user_id);
+  } else {
+    ensureContact(data.user_id, searchLead.phone, searchLead.name);
+    saveMessage(data.user_id, searchLead.phone, data.content);
+
+    const eventName = "outgoing_message";
+
+    global.io.to(sessions[data.user_id].socketId).emit(eventName, finalMessage);
+  }
+  return true;
 };

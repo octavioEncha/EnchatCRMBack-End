@@ -25,3 +25,14 @@ export const specificMessaByLeadId = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const sendMessage = async (req, res) => {
+  try {
+    const data = req.body;
+    await messageService.sendMessage({ data });
+
+    res.status(200).json({ message: "sucess" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
