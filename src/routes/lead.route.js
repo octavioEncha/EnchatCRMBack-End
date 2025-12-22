@@ -9,6 +9,8 @@ router.get("/lead/:id", leadController.specificLeadId);
 
 router.post("/lead/create", leadController.createNewLead);
 
+router.get("/lead/preview-import/:id", leadController.previewImportLeads);
+
 router.post("/lead/import", upload.single("file"), leadController.importLeads);
 
 export default router;

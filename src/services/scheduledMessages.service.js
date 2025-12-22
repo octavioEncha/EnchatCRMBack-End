@@ -54,6 +54,6 @@ export const verifyScheduledMessages = async () => {
 
     const randomWait = Math.floor(Math.random() * (50 - 40 + 1) + 40);
     console.log(`Aguardando ${randomWait} segundos para a próxima mensagem...`);
-    await new Promisse((resolve) => setTimeout(resolve, randomWait * 1000));
+    await new Promise((resolve) => setTimeout(resolve, randomWait * 1000));
   }
 };

@@ -39,9 +39,9 @@ export const importLeads = async (req, res) => {
       fs.unlink(filePath, () => {});
     }
 
-    res.status(200).json({
+    res.status(201).json({
       message: "Importação concluída",
-      imported: result.imported,
+      imported: result.importedCount,
       errors: result.errors,
     });
   } catch (error) {
@@ -49,7 +49,17 @@ export const importLeads = async (req, res) => {
     if (filePath) {
       fs.unlink(filePath, () => {});
     }
+    console.log(error);
+    res.status(400).json({ error: error.message });
+  }
+};
 
+export const previewImportLeads = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const leadCount = await leadService.previewImportLeads({ id });
+    res.status(200).json({ leadCount });
+  } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };

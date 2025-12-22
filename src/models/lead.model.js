@@ -32,15 +32,15 @@ export const createLead = async ({ data }) => {
         user_id: data.user_id,
         name: data.name,
         avatar: data.avatar,
-        email: data.email || "",
+        email: data.email ?? null, // ✅
         phone: data.phone,
         source: "crm",
         lid: data.lid,
         pipeline_id: data.pipeline_id,
-        company: data.company || "",
-        value: data.value || "",
-        notes: data.notes || "",
-        tags: data.tags || [], // <--- ADICIONE ISSO
+        company: data.company ?? null, // ✅
+        value: typeof data.value === "number" ? data.value : null, // ✅ CRÍTICO
+        notes: data.notes ?? null, // ✅
+        tags: Array.isArray(data.tags) ? data.tags : [], // ✅
       },
     ])
     .select();
@@ -50,4 +50,17 @@ export const createLead = async ({ data }) => {
   }
 
   return createNewLead[0];
+};
+
+export const countLeadsByUserId = async ({ user_id }) => {
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("user_id", user_id);
+
+  if (error) {
+    console.error("❌ Erro ao contar leads:", error.message);
+    return 0;
+  }
+  return data;
 };

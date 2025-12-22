@@ -76,69 +76,129 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
 };
 
 export const importLead = async ({ file, pipelineId }) => {
-  try {
-    if (!file || !file.path) {
-      throw new Error("Arquivo inválido.");
+  if (!file || !file.path) {
+    throw new Error("Arquivo inválido.");
+  }
+
+  const searchPipeline = await seachPipelineById({ id: pipelineId });
+  const instance = searchPipeline.user_id;
+
+  // Quantos ainda podem ser importados
+  const leadCount = await leadModel.countLeadsByUserId({ user_id: instance });
+  const limit = Math.max(0, 1000 - leadCount.length);
+
+  if (limit === 0) {
+    return {
+      importedCount: 0,
+      errors: [{ error: "Limite máximo de leads atingido" }],
+    };
+  }
+
+  const { readFile, utils } = XLSX;
+
+  const workBook = readFile(file.path);
+  const sheetName = workBook.SheetNames[0];
+  const worksheet = workBook.Sheets[sheetName];
+
+  const rows = utils.sheet_to_json(worksheet, { defval: "" });
+
+  let importedCount = 0;
+  let errors = [];
+
+  for (const item of rows) {
+    // 🛑 Para quando bater o limite de SUCESSO
+    if (importedCount >= limit) {
+      break;
     }
 
-    const searchPipelin = await seachPipelineById({ id: pipelineId });
+    // ✅ Validação correta
+    if (!item.nome || !item.email || !item.telefone) {
+      errors.push({ item, error: "Dados incompletos" });
+      continue;
+    }
 
-    const instance = searchPipelin.user_id;
+    const phone = String(item.telefone).replace(/\D/g, "");
+    if (!phone) {
+      errors.push({ item, error: "Telefone inválido" });
+      continue;
+    }
 
-    const { readFile, utils } = XLSX;
+    const leadExisting = await leadModel.searchLeadPhone({
+      phone,
+      instance,
+    });
 
-    // 📌 Lê o arquivo XLSX (AGORA CERTO)
-    const workBook = readFile(file.path);
+    if (leadExisting) {
+      errors.push({ item, error: "Lead já existe" });
+      continue;
+    }
 
-    const sheetName = workBook.SheetNames[0];
-    const worksheet = workBook.Sheets[sheetName];
+    const value =
+      item.valor === "" || item.valor === null || item.valor === undefined
+        ? null
+        : Number(item.valor);
 
-    const rows = utils.sheet_to_json(worksheet, { defval: "" });
-
-    for (const item of rows) {
+    // 🔥 Só busca profile se realmente vai salvar
+    let profile = {};
+    try {
       const response = await fetch(
         `https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
-        //`http://localhost:8081/chat/fetchProfile/${instance}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
-            //apikey: "meu_token_secreto",
           },
-          body: JSON.stringify({
-            number: String(item.telefone).replace(/\D/g, ""),
-          }),
+          body: JSON.stringify({ number: phone }),
         }
       );
 
-      const profile = await response.json();
-
-      const leadData = {
-        user_id: instance,
-        name: item.nome || item.telefone.replace(/\D/g, ""),
-        avatar:
-          profile.picture ||
-          "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
-        email: item.email,
-        phone: String(item.telefone).replace(/\D/g, ""),
-        source: "crm",
-        lid: "",
-        pipeline_id: pipelineId,
-        company: item.empresa,
-        value: item.valor,
-        notes: item.notas,
-        tags: String(item.tags)
-          .split(",") // separa por vírgulas
-          .map((tag) => tag.trim()) // remove espaços
-          .filter((tag) => tag !== ""), // remove vazios
-      };
-
-      const createNewLead = await leadModel.createLead({ data: leadData });
+      profile = await response.json();
+    } catch (err) {
+      // não quebra a importação por causa disso
+      profile = {};
     }
 
-    return true;
-  } catch (err) {
-    throw new Error(err.message);
+    const leadData = {
+      user_id: instance,
+      name: item.nome || phone,
+      avatar:
+        profile.picture ||
+        "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
+      email: item.email || null,
+      phone,
+      source: "crm",
+      lid: "",
+      pipeline_id: pipelineId,
+      company: item.empresa || null,
+      value,
+      notes: item.notas || null,
+      tags: String(item.tags || "")
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    };
+
+    await leadModel.createLead({ data: leadData });
+    importedCount++;
   }
+
+  return {
+    importedCount,
+    errors,
+    skipped: rows.length - importedCount - errors.length,
+    limit,
+  };
+};
+
+export const previewImportLeads = async ({ id }) => {
+  const searchPipelin = await seachPipelineById({ id });
+
+  const instance = searchPipelin.user_id;
+
+  const leadCount = await leadModel.countLeadsByUserId({ user_id: instance });
+
+  const result = 1000 - leadCount.length;
+
+  return result;
 };
