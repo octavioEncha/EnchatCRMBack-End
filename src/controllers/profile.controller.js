@@ -18,3 +18,13 @@ export const signUpProfile = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+export const enabledProfile = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const enable = await profileService.enabledProfile({ id });
+    res.status(201).json({ message: "sucess" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};

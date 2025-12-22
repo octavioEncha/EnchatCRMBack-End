@@ -37,19 +37,45 @@ export const createLead = async ({ data }) => {
         source: "crm",
         lid: data.lid,
         pipeline_id: data.pipeline_id,
+<<<<<<< HEAD
         company: data.company ?? null, // ✅
         value: typeof data.value === "number" ? data.value : null, // ✅ CRÍTICO
         notes: data.notes ?? null, // ✅
         tags: Array.isArray(data.tags) ? data.tags : [], // ✅
+=======
+        company: data.company || "",
+        value: data.value || null,
+        notes: data.notes || "",
+        tags: data.tags || [],
+>>>>>>> 6fdd5cd15e8fb6f5f84416eb2e7e6f0ad0458d0b
       },
     ])
-    .select();
+    .select()
+    .maybeSingle();
 
+  // ⚠️ erroInsert é o nome correto
   if (errorInsert) {
+    // 🔥 ERRO DE DUPLICADO — código 23505
+    if (errorInsert.code === "23505") {
+      console.log("⚠️ Lead já existe. Retornando lead existente…");
+
+      // retorna o lead existente
+      const { data: existingLead } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("phone", data.phone)
+        .eq("user_id", data.user_id)
+        .maybeSingle();
+      console.log(existingLead);
+      return existingLead;
+    }
+
+    // outros erros
     throw new Error(errorInsert.message);
   }
 
-  return createNewLead[0];
+  // retorno normal
+  return createNewLead;
 };
 
 export const countLeadsByUserId = async ({ user_id }) => {

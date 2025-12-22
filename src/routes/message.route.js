@@ -10,4 +10,6 @@ router.get(
 
 router.get("/message/lead/:lead_id", messageController.specificMessaByLeadId);
 
+router.post("/message/send-message", messageController.sendMessage);
+
 export default router;

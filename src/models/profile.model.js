@@ -55,6 +55,21 @@ export const updateProfileName = async ({ id, name }) => {
       display_name: name,
     })
     .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  return updateProfile;
+};
+
+export const enableProfile = async ({ id }) => {
+  const { data: updateProfile, error } = await supabase
+    .from("profiles")
+    .update({
+      enabled: true,
+    })
+    .eq("id", id)
     .single();
 
   if (error) throw new Error(error);

@@ -55,7 +55,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
 
   const leadData = {
     user_id: searchInbox.user_id,
-    name: profile.name || phone,
+    name: profile.name || String(phone),
     avatar:
       profile.picture ||
       "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
@@ -67,7 +67,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
   };
 
   const createNewLead = await leadModel.createLead({ data: leadData });
-
+  console.log(createNewLead);
   if (!createNewLead) {
     throw new Error("Error ao criar novo lead.");
   }

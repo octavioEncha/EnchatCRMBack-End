@@ -40,7 +40,6 @@ export const signUpProfile = async ({ data }) => {
   const searchProfile = await profileModel.findUserByEmail({
     email: data.email,
   });
-  console.log(searchProfile);
 
   if (searchProfile) {
     throw new Error("E-mail already exist");
@@ -56,5 +55,20 @@ export const signUpProfile = async ({ data }) => {
   return await sendEmailConfirmRegistration({
     to: data.email,
     name: data.name,
+    id: createProfile.user?.id,
   });
+};
+
+export const enabledProfile = async ({ id }) => {
+  const searchProfile = await profileModel.findProfileById({ id });
+
+  if (!searchProfile) {
+    throw new Error("Profile not found");
+  }
+
+  if (searchProfile?.enabled === true) {
+    throw new Error("Profile already enabled");
+  }
+
+  return await profileModel.enableProfile({ id: searchProfile.id });
 };
