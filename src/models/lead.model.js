@@ -37,17 +37,15 @@ export const createLead = async ({ data }) => {
         source: "crm",
         lid: data.lid,
         pipeline_id: data.pipeline_id,
-<<<<<<< HEAD
         company: data.company ?? null, // ✅
         value: typeof data.value === "number" ? data.value : null, // ✅ CRÍTICO
         notes: data.notes ?? null, // ✅
         tags: Array.isArray(data.tags) ? data.tags : [], // ✅
-=======
         company: data.company || "",
         value: data.value || null,
         notes: data.notes || "",
         tags: data.tags || [],
->>>>>>> 6fdd5cd15e8fb6f5f84416eb2e7e6f0ad0458d0b
+        lead_type: data?.lead_type || "lead",
       },
     ])
     .select()

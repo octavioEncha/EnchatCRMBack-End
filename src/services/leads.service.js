@@ -177,6 +177,7 @@ export const importLead = async ({ file, pipelineId }) => {
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean),
+      lead_type: "contact",
     };
 
     await leadModel.createLead({ data: leadData });
