@@ -9,6 +9,7 @@ import apiRoutes from "./api.route.js";
 import profileRoutes from "./profile.routes.js";
 import aiConfigurationRoutes from "./aiConfigurations.route.js";
 import passwordConfigRoutes from "./passwordConfig.route.js";
+import productImport from "./product.route.js";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/api", apiRoutes);
 router.use("/", profileRoutes);
 router.use("/ai-config", aiConfigurationRoutes);
 router.use("/password", passwordConfigRoutes);
+router.use("/product", productImport);
 
-export default router; // 👈 ESSA LINHA É FUNDAMENTAL
+export default router;
