@@ -11,4 +11,14 @@ router.post(
   productController.createNewProduct
 );
 
+router.get("/list/:id", productController.listProductsByUserId);
+
+router.put(
+  "/update/:id",
+  upload.single("file"),
+  productController.updateProductById
+);
+
+router.delete("/delete/:id", productController.deleteProductById);
+
 export default router;

@@ -1,22 +1,33 @@
+const parseBoolean = (value) => {
+  if (typeof value === "boolean") return value;
+
+  if (typeof value === "string") {
+    return value.toLowerCase() === "true";
+  }
+
+  if (typeof value === "number") {
+    return value === 1;
+  }
+
+  return false;
+};
+
 export default class Product {
   constructor({
     id,
-
     user_id,
-
     name,
     description,
-
     price,
     stock,
-
     repurchasePeriod,
-
     hasRAG,
-
     faqs,
     paymentLinks,
-
+    isOffer,
+    isOrderBump,
+    isUpsell,
+    isDownsell,
     createdAt,
     updatedAt,
   }) {
@@ -32,10 +43,15 @@ export default class Product {
 
     this.repurchasePeriod = repurchasePeriod;
 
-    this.hasRAG = Boolean(hasRAG);
+    this.hasRAG = parseBoolean(hasRAG);
 
     this.faqs = faqs || [];
     this.paymentLinks = paymentLinks || [];
+
+    this.isOffer = parseBoolean(isOffer);
+    this.isOrderBump = parseBoolean(isOrderBump);
+    this.isUpsell = parseBoolean(isUpsell);
+    this.isDownsell = parseBoolean(isDownsell);
 
     this.createdAt = createdAt || null;
     this.updatedAt = updatedAt || null;
@@ -43,7 +59,7 @@ export default class Product {
     this.validate();
   }
 
-  validate = () => {
+  validate() {
     const fields = {
       user_id: this.user_id,
       name: this.name,
@@ -75,9 +91,5 @@ export default class Product {
     if (!Array.isArray(this.faqs)) {
       throw new Error("FAQs must be an array");
     }
-
-    if (!Array.isArray(this.paymentLinks)) {
-      throw new Error("paymentLinks must be an array");
-    }
-  };
+  }
 }

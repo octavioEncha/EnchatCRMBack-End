@@ -5,6 +5,10 @@ import jwt from "jsonwebtoken";
 export const findProfileById = async ({ id }) => {
   const profile = await profileModel.findProfileById({ id });
 
+  if (!profile) {
+    throw new Error("Profile not found.");
+  }
+
   return profile;
 };
 
