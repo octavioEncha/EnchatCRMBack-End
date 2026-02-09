@@ -9,7 +9,8 @@ import apiRoutes from "./api.route.js";
 import profileRoutes from "./profile.routes.js";
 import aiConfigurationRoutes from "./aiConfigurations.route.js";
 import passwordConfigRoutes from "./passwordConfig.route.js";
-import productImport from "./product.route.js";
+import product from "./product.route.js";
+import inboxes from "./inbox.route.js";
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.use("/api", apiRoutes);
 router.use("/", profileRoutes);
 router.use("/ai-config", aiConfigurationRoutes);
 router.use("/password", passwordConfigRoutes);
-router.use("/product", productImport);
+router.use("/product", product);
+router.use("/inboxes", inboxes);
 
 export default router;

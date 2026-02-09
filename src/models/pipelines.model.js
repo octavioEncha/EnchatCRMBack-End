@@ -24,3 +24,15 @@ export const seachPipelineById = async ({ id }) => {
 
   return data;
 };
+
+export const getPipelinesWithProductsSet = async ({ id }) => {
+  const { data, error } = await supabase
+    .from("pipelines")
+    .select("*")
+    .eq("product_id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data;
+};

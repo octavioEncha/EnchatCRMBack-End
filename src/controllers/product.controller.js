@@ -44,3 +44,23 @@ export const deleteProductById = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const listProductsUnusedsPipelines = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const products = await productService.listProductsUnusedsPipelines({ id });
+    res.status(200).json({ products });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const listProductsUnusedsInboxes = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const products = await productService.listProductsUnusedsInboxes({ id });
+    res.status(200).json({ products });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};

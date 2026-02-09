@@ -1,8 +1,11 @@
 import { findProfileById } from "./profile.service.js";
+import { findInboxByIdOrThrow } from "./inbox.service.js";
 import * as aiConfigurationsModel from "../models/aiConfigurations.model.js";
 
-export const getAIConfiguration = async ({ id_profile }) => {
-  const searchProfileByid = await findProfileById({ id: id_profile });
+export const getAIConfiguration = async ({ id_inbox }) => {
+  const inbox = await findInboxByIdOrThrow({ id: id_inbox });
+
+  const searchProfileByid = await findProfileById({ id: inbox.user_id });
 
   if (!searchProfileByid) {
     throw new Error("Profile not found");
@@ -16,8 +19,13 @@ export const getAIConfiguration = async ({ id_profile }) => {
   return returnData;
 };
 
-export const updateConfigIA = async ({ id_profile, data }) => {
-  const searchProfileByid = await findProfileById({ id: id_profile });
+export const updateConfigIA = async ({ id_inbox, data }) => {
+  const inbox = await findInboxByIdOrThrow({ id: id_inbox });
 
-  return await aiConfigurationsModel.updateConfigIA({ id_profile, data });
+  const searchProfileByid = await findProfileById({ id: inbox.user_id });
+
+  return await aiConfigurationsModel.updateConfigIA({
+    id_profile: searchProfileByid.id,
+    data,
+  });
 };

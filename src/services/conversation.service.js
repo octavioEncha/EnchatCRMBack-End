@@ -1,19 +1,14 @@
 import * as conversationModels from "../models/conversation.model.js";
 import * as messageModels from "../models/message.model.js";
 import { findProfileById } from "./profile.service.js";
+import { findInboxByIdOrThrow } from "./inbox.service.js";
 
-export const listAllConversation = async ({ user_id }) => {
+export const listAllConversation = async ({ inbox_id }) => {
   try {
-    // 1. Buscar conversas do usuário
     const conversations = await conversationModels.listAllConversation({
-      user_id,
+      inbox_id,
     });
 
-    if (!conversations) {
-      throw new Error("Nenhuma conversa encontrada para o usuário.");
-    }
-
-    // 2. Para cada conversa, buscar a última mensagem
     const results = await Promise.all(
       conversations.map(async (conv) => {
         const lastMessage = await messageModels.listLastMessage({
@@ -52,11 +47,16 @@ export const searchConversation = async ({ lead_id }) => {
 
 export const createNewConversation = async ({ data }) => {
   try {
-    const aiConfigurationByProfile = await findProfileById({
+    const inbox = await findInboxByIdOrThrow({
       id: data.instance,
     });
 
+    const aiConfigurationByProfile = await findProfileById({
+      id: inbox.user_id,
+    });
+
     data.is_active = aiConfigurationByProfile.ia_active;
+    data.inbox_id = inbox.id;
 
     const createNewConversation =
       await conversationModels.createNewConversation({

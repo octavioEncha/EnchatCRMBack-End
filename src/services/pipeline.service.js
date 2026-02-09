@@ -16,3 +16,7 @@ export const seachPipelineById = async ({ id }) => {
 
   return searchPipeline;
 };
+
+export const getPipelinesWithProductsSet = async ({ id }) => {
+  return await pipelinesModel.getPipelinesWithProductsSet({ id });
+};

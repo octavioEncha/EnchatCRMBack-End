@@ -23,6 +23,8 @@ export const especificMessaByConversationID = async ({ conversationId }) => {
   if (!getMessagesByConversationId) {
     throw new Error("Nenhuma mensagem encontrada para esta conversa.");
   }
+
+  console.log(getMessagesByConversationId);
   return getMessagesByConversationId;
 };
 

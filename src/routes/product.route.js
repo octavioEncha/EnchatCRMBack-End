@@ -13,6 +13,18 @@ router.post(
 
 router.get("/list/:id", productController.listProductsByUserId);
 
+//LIST PIPELINES
+router.get(
+  "/list/unused/pipelines/:id",
+  productController.listProductsUnusedsPipelines
+);
+
+//LIST INBOX
+router.get(
+  "/list/unused/inboxes/:id",
+  productController.listProductsUnusedsInboxes
+);
+
 router.put(
   "/update/:id",
   upload.single("file"),

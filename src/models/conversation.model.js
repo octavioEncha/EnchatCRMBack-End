@@ -1,10 +1,10 @@
 import { supabase } from "../config/supabaseClient.js";
 
-export const listAllConversation = async ({ user_id }) => {
+export const listAllConversation = async ({ inbox_id }) => {
   const { data: conversations, error } = await supabase
     .from("conversations")
     .select("*")
-    .eq("user_id", user_id)
+    .eq("inbox_id", inbox_id)
     .order("last_message_at", { ascending: false });
 
   return conversations;
@@ -27,6 +27,7 @@ export const createNewConversation = async ({ data }) => {
       user_id: data.user_id,
       lead_id: data.lead_id,
       ai_enabled: data.is_active,
+      inbox_id: data.inbox_id,
     })
     .select()
     .maybeSingle();

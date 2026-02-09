@@ -4,8 +4,8 @@ import * as aiConfigurationsController from "../controllers/aiConfigurations.con
 
 const router = Router();
 
-router.get("/:id_profile", aiConfigurationsController.getAIConfiguration);
+router.get("/:id", aiConfigurationsController.getAIConfiguration);
 
-router.put("/update/:id_profile", aiConfigurationsController.updateConfigIA);
+router.put("/update/:id", aiConfigurationsController.updateConfigIA);
 
 export default router;

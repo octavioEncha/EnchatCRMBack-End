@@ -3,9 +3,10 @@ import XLSX from "xlsx";
 import * as leadModel from "../models/lead.model.js";
 import * as inboxModel from "../models/inbox.model.js";
 import {
-  searchPipelineIsdefault,
+  getPipelinesWithProductsSet,
   seachPipelineById,
 } from "./pipeline.service.js";
+import { findInboxByIdOrThrow } from "./inbox.service.js";
 
 //ARRUMAR PARA ALÉM DE ENVIAR O NÚMERO, ENVIAR O USER_ID
 export const searchLead = async ({ phone, instance }) => {
@@ -26,17 +27,17 @@ export const searchLeadId = async ({ id }) => {
 };
 
 export const createNewLead = async ({ data, phone, instance, lid }) => {
-  // remove tudo que não for número
-  const searchInbox = await inboxModel.searchInbox({ instance });
+  const searchInbox = await findInboxByIdOrThrow({ id: instance });
 
   if (!searchInbox) {
     throw new Error("❌ Erro ao buscar canal:");
   }
 
-  const searchPipeline = await searchPipelineIsdefault({
-    user_id: searchInbox.user_id,
+  const searchPipeline = await getPipelinesWithProductsSet({
+    id: searchInbox.product_id,
   });
 
+  console.log("to aqui");
   const response = await fetch(
     `https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
     //`http://localhost:8081/chat/fetchProfile/${instance}`,
@@ -53,6 +54,8 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
 
   const profile = await response.json();
 
+  console.log(profile);
+
   const leadData = {
     user_id: searchInbox.user_id,
     name: profile.name || String(phone),
@@ -63,6 +66,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
     phone: phone,
     source: "crm",
     lid,
+    //pipeline_id: null,
     pipeline_id: searchPipeline.id,
   };
 

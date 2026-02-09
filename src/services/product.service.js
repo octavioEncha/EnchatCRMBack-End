@@ -1,8 +1,10 @@
 import Product from "../entities/product.entity.js";
 import { findProfileById } from "./profile.service.js";
 import * as productModel from "../models/product.model.js";
+import { getPipelinesWithProductsSet } from "./pipeline.service.js";
+import { inboxWithProductSet } from "./inbox.service.js";
 
-const searchProdubyByIdOrThrow = async ({ id }) => {
+export const searchProdubyByIdOrThrow = async ({ id }) => {
   const produto = await productModel.listProductById({ id });
 
   if (!produto) {
@@ -113,4 +115,105 @@ export const deleteProductById = async ({ id }) => {
   const produto = await searchProdubyByIdOrThrow({ id });
 
   await productModel.deleteProductById({ id });
+};
+
+export const listProductsUnusedsPipelines = async ({ id }) => {
+  await findProfileById({ id });
+
+  const products = await productModel.listProductsByUserId({ id });
+
+  const productsUnuseds = [];
+
+  for (const product of products) {
+    const pipelineProduct = await getPipelinesWithProductsSet({
+      id: product.id,
+    });
+
+    if (!pipelineProduct) {
+      productsUnuseds.push(product);
+    }
+  }
+
+  return productsUnuseds.map(
+    (item) =>
+      new Product({
+        id: item.id,
+        user_id: item.user_id,
+        name: item.name,
+        description: item.description,
+
+        price: item.price,
+
+        // 🔥 converte
+        stock: item.stock_quantity,
+
+        repurchasePeriod: item.repurchase_time,
+
+        hasRAG: item.has_rag,
+
+        faqs: item.faq,
+        paymentLinks: item.payment_link,
+
+        isOffer: item.offer,
+        isOrderBump: item.orderBump,
+        isUpsell: item.upSell,
+        isDownsell: item.downsell,
+
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+      })
+  );
+};
+
+export const listProductsUnusedsInboxes = async ({ id }) => {
+  await findProfileById({ id });
+
+  const products = await productModel.listProductsByUserId({ id });
+
+  const productsUnuseds = [];
+
+  for (const product of products) {
+    const inboxProduct = await inboxWithProductSet({
+      product_id: product.id,
+    });
+
+    if (!inboxProduct) {
+      const pipelineProduct = await getPipelinesWithProductsSet({
+        id: product.id,
+      });
+      if (pipelineProduct) {
+        productsUnuseds.push(product);
+      }
+    }
+  }
+
+  return productsUnuseds.map(
+    (item) =>
+      new Product({
+        id: item.id,
+        user_id: item.user_id,
+        name: item.name,
+        description: item.description,
+
+        price: item.price,
+
+        // 🔥 converte
+        stock: item.stock_quantity,
+
+        repurchasePeriod: item.repurchase_time,
+
+        hasRAG: item.has_rag,
+
+        faqs: item.faq,
+        paymentLinks: item.payment_link,
+
+        isOffer: item.offer,
+        isOrderBump: item.orderBump,
+        isUpsell: item.upSell,
+        isDownsell: item.downsell,
+
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+      })
+  );
 };

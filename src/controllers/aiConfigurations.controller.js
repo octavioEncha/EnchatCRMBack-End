@@ -2,9 +2,9 @@ import * as iaConfigurationService from "../services/aiConfigurations.service.js
 
 export const getAIConfiguration = async (req, res) => {
   try {
-    const id_profile = req.params.id_profile;
+    const id = req.params.id;
     const getConfiguration = await iaConfigurationService.getAIConfiguration({
-      id_profile,
+      id_inbox: id,
     });
     res.status(200).json({ ai_configuration: getConfiguration });
   } catch (err) {
@@ -14,11 +14,11 @@ export const getAIConfiguration = async (req, res) => {
 
 export const updateConfigIA = async (req, res) => {
   try {
-    const id_profile = req.params.id_profile;
+    const id = req.params.id;
     const data = req.body;
 
     const updateConfigIA = await iaConfigurationService.updateConfigIA({
-      id_profile,
+      id_inbox: id,
       data,
     });
 
