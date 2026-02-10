@@ -49,7 +49,7 @@ export const listProductsByUserId = async ({ id }) => {
         question,
         response
       )
-    `
+    `,
     )
     .eq("user_id", id);
 
@@ -71,7 +71,7 @@ export const listProductById = async ({ id }) => {
         question,
         response
       )
-    `
+    `,
     )
     .eq("id", id)
     .single(); // 👈 retorna objeto, não array
