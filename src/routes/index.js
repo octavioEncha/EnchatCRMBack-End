@@ -11,6 +11,7 @@ import aiConfigurationRoutes from "./aiConfigurations.route.js";
 import passwordConfigRoutes from "./passwordConfig.route.js";
 import product from "./product.route.js";
 import inboxes from "./inbox.route.js";
+import followUp from "./followUp.route.js";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/ai-config", aiConfigurationRoutes);
 router.use("/password", passwordConfigRoutes);
 router.use("/product", product);
 router.use("/inboxes", inboxes);
+router.use("/fup", followUp);
 
 export default router;

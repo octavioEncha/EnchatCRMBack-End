@@ -77,7 +77,7 @@ export const listProductsByUserId = async ({ id }) => {
 
         createdAt: item.created_at,
         updatedAt: item.updated_at,
-      })
+      }),
   );
 };
 
@@ -161,7 +161,7 @@ export const listProductsUnusedsPipelines = async ({ id }) => {
 
         createdAt: item.created_at,
         updatedAt: item.updated_at,
-      })
+      }),
   );
 };
 
@@ -214,6 +214,6 @@ export const listProductsUnusedsInboxes = async ({ id }) => {
 
         createdAt: item.created_at,
         updatedAt: item.updated_at,
-      })
+      }),
   );
 };
