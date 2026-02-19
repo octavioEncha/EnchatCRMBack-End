@@ -17,6 +17,12 @@ export const searchProdubyByIdOrThrow = async ({ id }) => {
 export const createNewProduct = async ({ data }) => {
   const faqs = JSON.parse(data.faqs || "[]");
 
+  if (faqs.length < 3) {
+    throw new Error("At least 3 FAQs are required");
+  }
+
+  console.log(faqs.length);
+
   const produto = new Product({
     user_id: data.user_id,
     name: data.name,

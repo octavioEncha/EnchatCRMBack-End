@@ -36,3 +36,15 @@ export const getPipelinesWithProductsSet = async ({ id }) => {
 
   return data;
 };
+
+export const getPipelineByUserId = async ({ id }) => {
+  const { data, error } = await supabase
+    .from("pipelines")
+    .select("*")
+    .eq("user_id", id)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+
+  return data;
+};

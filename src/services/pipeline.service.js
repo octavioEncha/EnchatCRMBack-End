@@ -1,5 +1,7 @@
 import * as pipelinesModel from "../models/pipelines.model.js";
 
+import { inboxWithPipelineSet } from "./inbox.service.js";
+
 export const searchPipelineIsdefault = async ({ user_id }) => {
   const searchPipeline = await pipelinesModel.searchPipelineIsdefault({
     user_id,
@@ -19,4 +21,24 @@ export const seachPipelineById = async ({ id }) => {
 
 export const getPipelinesWithProductsSet = async ({ id }) => {
   return await pipelinesModel.getPipelinesWithProductsSet({ id });
+};
+
+export const getPipelineByUserIdAndWithoutInboxSet = async ({ id }) => {
+  const allPipelinesByUserId = await pipelinesModel.getPipelineByUserId({ id });
+
+  let pipelineWithoutInboxSet = [];
+
+  await Promise.all(
+    allPipelinesByUserId.map(async (pipeline) => {
+      const pipelineWithInboxSet = await inboxWithPipelineSet({
+        pipeline_id: pipeline.id,
+      });
+
+      if (!pipelineWithInboxSet) {
+        pipelineWithoutInboxSet.push(pipeline);
+      }
+    }),
+  );
+
+  return pipelineWithoutInboxSet;
 };

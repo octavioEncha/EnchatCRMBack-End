@@ -33,11 +33,10 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
     throw new Error("❌ Erro ao buscar canal:");
   }
 
-  const searchPipeline = await getPipelinesWithProductsSet({
-    id: searchInbox.product_id,
+  const searchPipeline = await seachPipelineById({
+    id: searchInbox.pipeline_id,
   });
 
-  console.log("to aqui");
   const response = await fetch(
     `https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
     //`http://localhost:8081/chat/fetchProfile/${instance}`,
@@ -49,7 +48,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
         //apikey: "meu_token_secreto",
       },
       body: JSON.stringify({ number: phone }),
-    }
+    },
   );
 
   const profile = await response.json();
@@ -154,7 +153,7 @@ export const importLead = async ({ file, pipelineId }) => {
             apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
           },
           body: JSON.stringify({ number: phone }),
-        }
+        },
       );
 
       profile = await response.json();

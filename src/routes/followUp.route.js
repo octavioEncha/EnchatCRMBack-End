@@ -3,7 +3,9 @@ import * as fupController from "../controllers/followUp.controller.js";
 
 const router = Router();
 
-router.get("/list/:id", fupController.listAllFollowUpByProductId);
-router.put("/update/:id", fupController.updateFollowUpById);
+router.post("/", fupController.createFUP);
+router.get("/:id", fupController.listAllFollowUpByOfferId);
+router.put("/:id", fupController.updateFollowUpById);
+router.delete("/:id", fupController.deleteFollowUpById);
 
 export default router;

@@ -12,6 +12,18 @@ export const listLastMessage = async ({ conversation_id }) => {
   return lastMessage;
 };
 
+export const getMessageById = async ({ messageId }) => {
+  const { data: message, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("message_id", messageId)
+    .maybeSingle();
+
+  if (error) throw error;
+  console.log("message: ", message);
+  return message;
+};
+
 export const especificMessaByConversationID = async ({ conversationId }) => {
   const { data, error } = await supabase
     .from("messages")
@@ -42,6 +54,7 @@ export const createMessage = async ({ data }) => {
         sender_type: data.senderType,
         sender_id: data.lead_id,
         content: data.messageContent,
+        message_id: data.messageId ?? "user-" + Date.now(),
       },
     ])
     .select()
@@ -75,6 +88,7 @@ export const createMessageForShootingToLead = async ({
         sender_type: "user",
         sender_id: lead_id,
         content,
+        message_id: data.messageId ?? "user-" + Date.now(),
       },
     ])
     .select()
@@ -117,6 +131,7 @@ export const createMessageWithAttachment = async ({ data }) => {
         content: data.attachmentUrl,
         attachment_type: data.messageType,
         has_attachment: true,
+        message_id: data.messageId ?? "user-" + Date.now(),
       },
     ])
     .select()

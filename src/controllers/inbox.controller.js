@@ -20,6 +20,17 @@ export const getAllInboxes = async (req, res) => {
   }
 };
 
+export const updateInboxById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const data = req.body;
+    await inboxService.updateInboxById({ id, data });
+    res.status(200).json({ message: "sucess" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 export const deleteInboxById = async (req, res) => {
   try {
     const id = req.params.id;

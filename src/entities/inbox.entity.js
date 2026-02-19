@@ -7,16 +7,16 @@ export default class Inbox {
     webhook_url,
     is_active,
     number,
-    product_id,
+    offers,
     name,
-    products,
+    pipeline_id,
+    pipeline,
     created_at,
     updated_at,
   }) {
     // IDs
     this.id = id || null;
     this.user_id = user_id || null;
-    this.product_id = product_id || null;
 
     // Config
     this.provider = provider || null;
@@ -29,14 +29,24 @@ export default class Inbox {
     // Info
     this.number = number || null;
     this.name = name || "Inbox Principal";
+    this.pipeline_id = pipeline_id;
 
-    // Produto (objeto simples, sem entity)
-    this.product = products
+    this.offers = Array.isArray(offers)
+      ? offers.map((offer) => ({
+          id: offer.id,
+          name: offer.name || null,
+          product_name: offer.product_name || null,
+          orderbump_product_name: offer.orderbump_product_name || null,
+          upsell_product_name: offer.upsell_product_name || null,
+          downsell_product_name: offer.downsell_product_name || null,
+        }))
+      : null;
+
+    this.pipeline = pipeline
       ? {
-          id: products.id || null,
-          name: products.name || null,
-          price: products.price ?? null,
-          description: products.description || null,
+          id: pipeline.id,
+          name: pipeline.name || null,
+          description: pipeline.description || null,
         }
       : null;
 
@@ -60,11 +70,21 @@ export default class Inbox {
       throw new Error("Inbox must have name");
     }
 
+    if (!this.pipeline_id) {
+      throw new Error("Inbox must have pipeline_id");
+    }
+
     const allowedProviders = ["whatsapp", "telegram", "instagram"];
 
     if (!allowedProviders.includes(this.provider)) {
       throw new Error(`Invalid provider: ${this.provider}`);
     }
+
+    this.offers.forEach((offer) => {
+      if (!offer.id) {
+        throw new Error("Offer in inbox must have id");
+      }
+    });
   }
 
   isActive() {
@@ -83,7 +103,8 @@ export default class Inbox {
       name: this.name,
       number: this.number,
       is_active: this.is_active,
-      product: this.product,
+      pipeline: this.pipeline,
+      offers: this.offers,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

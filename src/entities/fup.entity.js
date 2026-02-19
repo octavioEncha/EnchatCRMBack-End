@@ -1,48 +1,32 @@
-export default class Inbox {
+export default class FollowUp {
   constructor({
     id,
-    product_id,
-    pipeline_id,
     user_id,
-    fup_type,
-    message_template,
-    delay_hours,
-    pipeline,
-    product,
+    offer_id,
+    name,
+    step,
+    steps,
     created_at,
     updated_at,
   }) {
     // IDs
     this.id = id || null;
-    this.product_id = product_id || null;
-    this.pipeline_id = pipeline_id || null;
-    this.user_id = user_id || null;
+    this.user_id = user_id;
+    this.offer_id = offer_id;
 
-    // Follow-up
-    this.fup_type = fup_type || null;
-    this.message_template = message_template || null;
-    this.delay_hours = delay_hours ?? null;
-
-    // Produto (objeto simples)
-    this.product = product
-      ? {
-          id: product.id || null,
-          name: product.name || null,
-          price: product.price ?? null,
-          description: product.description || null,
-          repurchase_time: product.repurchase_time || null,
-        }
-      : null;
-
-    // Pipeline (objeto simples)
-    this.pipeline = pipeline
-      ? {
-          id: pipeline.id || null,
-          name: pipeline.name || null,
-          description: pipeline.description || null,
-        }
-      : null;
-
+    //Dados gerais
+    this.name = name;
+    this.step = step;
+    this.steps =
+      steps && Array.isArray(steps)
+        ? steps.map((step) => ({
+            id: step.id || null,
+            message: step.message,
+            rest: step.rest,
+            rest_unit: step.rest_unit,
+            created_at: step.created_at || null,
+          }))
+        : null;
     // Datas
     this.createdAt = created_at || null;
     this.updatedAt = updated_at || null;
@@ -51,16 +35,37 @@ export default class Inbox {
   }
 
   validate() {
+    const stepValid = ["1°", "2°", "3°", "4°"];
+    const restUnitValid = ["minutes", "hours", "days", "repurchase"];
+
     if (!this.user_id) {
-      throw new Error("Inbox must have user_id");
+      throw new Error("Follow up must have user_id");
     }
 
-    if (!this.product_id) {
-      throw new Error("Inbox must have product_id");
+    if (!this.offer_id) {
+      throw new Error("Follow up must have offer_id");
     }
 
-    if (!this.pipeline_id) {
-      throw new Error("Inbox must have pipeline_id");
+    if (!this.name) {
+      throw new Error("Follow up must have name");
+    }
+
+    if (!this.step || !stepValid.includes(this.step)) {
+      throw new Error("Follow up must have a valid step");
+    }
+
+    if (this.steps) {
+      if (!this.steps) {
+        throw new Error("Follow up must have steps");
+      }
+      this.steps.forEach((step) => {
+        if (!step.message) {
+          throw new Error("Each step must have a message");
+        }
+        if (!restUnitValid.includes(step.rest_unit)) {
+          throw new Error("Each step must have a valid rest unit");
+        }
+      });
     }
   }
 }

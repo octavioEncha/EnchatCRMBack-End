@@ -51,6 +51,15 @@ export const specificMessaByLeadId = async ({ lead_id }) => {
  */
 export const createNewMessage = async ({ data, event, instance }) => {
   try {
+    const messageId = data?.key?.id;
+
+    const existingMessage = await messageModel.getMessageById({ messageId });
+    if (existingMessage) {
+      console.log("⚠️ Mensagem já processada, ignorando:", messageId);
+      return null;
+    }
+    console.log(messageId);
+
     const messageContent =
       data?.message?.conversation ||
       data?.message?.extendedTextMessage?.text ||
@@ -144,6 +153,7 @@ export const createNewMessage = async ({ data, event, instance }) => {
         lead_id: lead.id,
         attachmentUrl: uploadResult,
         messageType,
+        messageId,
       };
 
       createNewMessage = await messageModel.createMessageWithAttachment({
@@ -155,6 +165,7 @@ export const createNewMessage = async ({ data, event, instance }) => {
         senderType,
         lead_id: lead.id,
         messageContent,
+        messageId,
       };
       createNewMessage = await messageModel.createMessage({
         data: dataMessage,
@@ -227,7 +238,7 @@ export const createMessageForShootingToLead = async ({
 
     console.log(
       "✅ Mensagem criada via Disparo do CRM:",
-      createMessageForShootingToLead.content
+      createMessageForShootingToLead.content,
     );
     return { lead, conversation, message: createMessageForShootingToLead };
   } catch (err) {
@@ -239,8 +250,6 @@ export const createMessageForShootingToLead = async ({
  * Cria nova mensagem enviada manualmente pelo CRM (via interface)
  */
 export const createNewMessageSendCRM = async ({ data, instance }) => {
-  console.log(data);
-
   try {
     const phone = data?.key?.remoteJid?.replace(/\D/g, "");
     const content = data?.message?.conversation;
@@ -331,7 +340,7 @@ export const sendMessage = async ({ data }) => {
         number: searchLead.phone,
         text: data.content,
       }),
-    }
+    },
   );
 
   const dataResponse = await response.json();
