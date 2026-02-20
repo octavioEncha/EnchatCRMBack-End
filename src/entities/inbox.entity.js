@@ -9,6 +9,7 @@ export default class Inbox {
     number,
     offers,
     name,
+    prompt,
     pipeline_id,
     pipeline,
     created_at,
@@ -29,6 +30,7 @@ export default class Inbox {
     // Info
     this.number = number || null;
     this.name = name || "Inbox Principal";
+    this.prompt = prompt;
     this.pipeline_id = pipeline_id;
 
     this.offers = Array.isArray(offers)
@@ -70,6 +72,10 @@ export default class Inbox {
       throw new Error("Inbox must have name");
     }
 
+    if (!this.prompt) {
+      throw new Error("Inbox must have prompt");
+    }
+
     if (!this.pipeline_id) {
       throw new Error("Inbox must have pipeline_id");
     }
@@ -101,6 +107,7 @@ export default class Inbox {
       user_id: this.user_id,
       provider: this.provider,
       name: this.name,
+      prompt: this.prompt,
       number: this.number,
       is_active: this.is_active,
       pipeline: this.pipeline,

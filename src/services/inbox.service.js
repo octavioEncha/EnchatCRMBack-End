@@ -47,6 +47,7 @@ export const createInbox = async ({ data }) => {
     is_active: true,
     number: null,
     name: data.name,
+    prompt: data.prompt,
     pipeline_id: data.pipeline_id,
     offers: data.offers,
   });
@@ -81,7 +82,6 @@ export const listAllInboxesByUserId = async ({ id }) => {
         downsell_product_name: rel.offer?.downsell?.name || null,
       })) || [];
 
-    // 🔥 REMOVE pipeline e offer_integration_channels
     const { offer_integration_channels, ...rest } = inbox;
 
     return new Inbox({

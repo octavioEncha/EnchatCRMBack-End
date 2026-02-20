@@ -15,6 +15,7 @@ export const createInbox = async ({ data }) => {
       user_id: data.user_id,
       provider: data.provider,
       name: data.name,
+      prompt: data.prompt,
       api_key: data.api_key,
       webhook_url: data.webhook_url,
       is_active: data.is_active,
@@ -119,6 +120,7 @@ export const updateInboxById = async ({ id, data }) => {
     .from("integration_channels")
     .update({
       name: data.name,
+      prompt: data.prompt,
       api_key: data.api_key,
       webhook_url: data.webhook_url,
       is_active: data.is_active,
