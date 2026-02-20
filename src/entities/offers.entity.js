@@ -3,7 +3,7 @@ export default class Offer {
     id,
     user_id,
     product_id,
-    orderbump_product_id,
+    orderbump_product_ids,
     upsell_product_id,
     downsell_product_id,
     name,
@@ -13,7 +13,11 @@ export default class Offer {
     this.id = id || null;
     this.product_id = product_id || null;
     this.user_id = user_id || null;
-    this.orderbump_product_id = orderbump_product_id || null;
+
+    this.orderbump_product_ids = Array.isArray(orderbump_product_ids)
+      ? orderbump_product_ids
+      : null;
+
     this.upsell_product_id = upsell_product_id || null;
     this.downsell_product_id = downsell_product_id || null;
 

@@ -19,8 +19,12 @@ export const createNewOffer = async ({ data }) => {
 
   await searchProdubyByIdOrThrow({ id: offer.product_id });
 
-  if (offer.orderbump_product_id) {
-    await searchProdubyByIdOrThrow({ id: offer.orderbump_product_id });
+  if (offer.orderbump_product_ids?.length) {
+    await Promise.all(
+      offer.orderbump_product_ids.map((id) => {
+        return searchProdubyByIdOrThrow({ id });
+      }),
+    );
   }
 
   if (offer.upsell_product_id) {
@@ -31,7 +35,18 @@ export const createNewOffer = async ({ data }) => {
     await searchProdubyByIdOrThrow({ id: offer.downsell_product_id });
   }
 
-  return await offersModel.createOffer({ data: offer });
+  const newOffer = await offersModel.createOffer({ data: offer });
+
+  if (offer.orderbump_product_ids?.length) {
+    await Promise.all(
+      offer.orderbump_product_ids.map((id) => {
+        return offersModel.createOfferOrderBumps({
+          offer_id: newOffer.id,
+          orderbump_product_id: id,
+        });
+      }),
+    );
+  }
 };
 
 export const getAllOffersByUserId = async (id) => {
@@ -47,8 +62,12 @@ export const updateOfferById = async ({ id, data }) => {
 
   await searchProdubyByIdOrThrow({ id: offer.product_id });
 
-  if (offer.orderbump_product_id) {
-    await searchProdubyByIdOrThrow({ id: offer.orderbump_product_id });
+  if (offer.orderbump_product_ids?.length) {
+    await Promise.all(
+      offer.orderbump_product_ids.map((id) => {
+        return searchProdubyByIdOrThrow({ id });
+      }),
+    );
   }
 
   if (offer.upsell_product_id) {
@@ -59,11 +78,26 @@ export const updateOfferById = async ({ id, data }) => {
     await searchProdubyByIdOrThrow({ id: offer.downsell_product_id });
   }
 
-  return await offersModel.updateOfferById({ id, data: offer });
+  await offersModel.updateOfferById({ id, data: offer });
+
+  await offersModel.deleteOfferOderBumpByOfferId({ id });
+
+  if (offer.orderbump_product_ids?.length) {
+    await Promise.all(
+      offer.orderbump_product_ids.map((id) => {
+        return offersModel.createOfferOrderBumps({
+          offer_id: offer.id,
+          orderbump_product_id: id,
+        });
+      }),
+    );
+  }
 };
 
 export const deleteOfferById = async ({ id }) => {
   await findByIdOrThrow(id);
+
+  await offersModel.deleteOfferOderBumpByOfferId({ id });
 
   return await offersModel.deleteOfferById({ id });
 };

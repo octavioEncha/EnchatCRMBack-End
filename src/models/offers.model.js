@@ -17,9 +17,6 @@ export const createOffer = async ({ data }) => {
       user_id: data.user_id,
       product_id: data.product_id,
       name: data.name,
-      orderbump_product_id: data.orderbump_product_id
-        ? data.orderbump_product_id
-        : null,
       upsell_product_id: data.upsell_product_id ? data.upsell_product_id : null,
       downsell_product_id: data.downsell_product_id
         ? data.downsell_product_id
@@ -33,15 +30,42 @@ export const createOffer = async ({ data }) => {
   return offer;
 };
 
+export const createOfferOrderBumps = async ({
+  offer_id,
+  orderbump_product_id,
+}) => {
+  const { error } = await supabase
+    .from("offer_order_bumps")
+    .insert({
+      offer_id,
+      oderbump_product_id: orderbump_product_id,
+    })
+    .select()
+    .single();
+
+  if (error) throw new error();
+
+  return true;
+};
+
 export const getAllOffersByUserId = async (id) => {
-  const { data: offers, error } = await supabase
+  const { data, error } = await supabase
     .from("offer")
-    .select("*")
+    .select(
+      `
+      *,
+      orderbump_product_ids:offer_order_bumps (
+        id,
+        oderbump_product_id
+      
+      )
+    `,
+    )
     .eq("user_id", id);
 
   if (error) throw error;
 
-  return offers;
+  return data;
 };
 
 export const updateOfferById = async ({ id, data }) => {
@@ -50,9 +74,6 @@ export const updateOfferById = async ({ id, data }) => {
     .update({
       product_id: data.product_id,
       name: data.name,
-      orderbump_product_id: data.orderbump_product_id
-        ? data.orderbump_product_id
-        : null,
       upsell_product_id: data.upsell_product_id ? data.upsell_product_id : null,
       downsell_product_id: data.downsell_product_id
         ? data.downsell_product_id
@@ -65,5 +86,13 @@ export const updateOfferById = async ({ id, data }) => {
 
 export const deleteOfferById = async ({ id }) => {
   const { error } = await supabase.from("offer").delete().eq("id", id);
+  if (error) throw error;
+};
+
+export const deleteOfferOderBumpByOfferId = async ({ id }) => {
+  const { error } = await supabase
+    .from("offer_order_bumps")
+    .delete()
+    .eq("offer_id", id);
   if (error) throw error;
 };
