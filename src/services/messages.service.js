@@ -155,7 +155,7 @@ export const createNewMessage = async ({ data, instance }) => {
       ai_enabled: conversation.ai_enabled,
     };
 
-    //await sendMessageToClientConnected({ instance, finalMessage });
+    await sendMessageToClientConnected({ instance, finalMessage });
 
     // ==============================
     // 🤖 FLUXO IA
