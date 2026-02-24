@@ -19,7 +19,7 @@ export const listAllConversation = async ({ inbox_id }) => {
           ...conv,
           lastMessage,
         };
-      })
+      }),
     );
 
     return results;
@@ -34,7 +34,6 @@ export const searchConversation = async ({ lead_id }) => {
       lead_id,
     });
     if (!searchConversation) {
-      console.log("Nenhuma conversa encontrada para o lead_id:", lead_id);
       return null;
     }
 
@@ -48,15 +47,18 @@ export const searchConversation = async ({ lead_id }) => {
 export const createNewConversation = async ({ data }) => {
   try {
     const inbox = await findInboxByIdOrThrow({
-      id: data.instance,
+      id: data.inbox_id,
     });
 
+    const user_id = inbox?.user_id;
+
     const aiConfigurationByProfile = await findProfileById({
-      id: inbox.user_id,
+      id: user_id,
     });
 
     data.is_active = aiConfigurationByProfile.ia_active;
     data.inbox_id = inbox.id;
+    data.user_id = user_id;
 
     const createNewConversation =
       await conversationModels.createNewConversation({

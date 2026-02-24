@@ -10,7 +10,12 @@ import { findInboxByIdOrThrow } from "./inbox.service.js";
 
 //ARRUMAR PARA ALÉM DE ENVIAR O NÚMERO, ENVIAR O USER_ID
 export const searchLead = async ({ phone, instance }) => {
-  const lead = await leadModel.searchLeadPhone({ phone, instance });
+  const inbox = await findInboxByIdOrThrow({ id: instance });
+
+  const lead = await leadModel.searchLeadPhone({
+    phone,
+    instance: inbox.user_id,
+  });
 
   return lead;
 };

@@ -15,6 +15,7 @@ export const webhookController = async (req, res) => {
       event,
       instance,
     });
+    return res.status(200).send("OK");
 
     if (!result) {
       console.log("❌ Falha ao processar mensagem");
@@ -77,8 +78,6 @@ export const webhookController = async (req, res) => {
 
       global.io.to(sessions[sessionId].socketId).emit(eventName, finalMessage);
     }
-
-    return res.status(200).send("OK");
   } catch (error) {
     console.error("❌ Erro no webhook:", error);
     return res.status(200).send("Erro");

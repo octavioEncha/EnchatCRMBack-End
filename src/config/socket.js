@@ -62,7 +62,7 @@ const initSocket = (io) => {
               "Content-Type": "application/json",
               apikey: API_KEY,
             },
-          }
+          },
         );
 
         const checkData = await checkResponse.json();
@@ -97,7 +97,7 @@ const initSocket = (io) => {
                   events: ["MESSAGES_UPSERT"],
                 },
               }),
-            }
+            },
           );
 
           const createData = await createResponse.json();
@@ -131,7 +131,7 @@ const initSocket = (io) => {
                     "Content-Type": "application/json",
                     apikey: API_KEY,
                   },
-                }
+                },
               );
               const qrData = await qrResponse.json();
 
@@ -158,7 +158,7 @@ const initSocket = (io) => {
                 });
                 socket.emit("qrcode_clear", { sessionId });
                 console.log(
-                  `✅ Instância ${sessionId} conectada, polling parado.`
+                  `✅ Instância ${sessionId} conectada, polling parado.`,
                 );
                 return;
               }
@@ -169,7 +169,7 @@ const initSocket = (io) => {
                 !qrData.qrcode?.base64
               ) {
                 console.log(
-                  "⚠️ Sessão desconectada sem QR; solicitando nova geração..."
+                  "⚠️ Sessão desconectada sem QR; solicitando nova geração...",
                 );
                 try {
                   // usa endpoint de geração (connect) conforme sua observação
@@ -181,7 +181,7 @@ const initSocket = (io) => {
                         "Content-Type": "application/json",
                         apikey: API_KEY,
                       },
-                    }
+                    },
                   );
                   const recreateData = await recreateResponse.json();
                   // aceita tanto recreateData.base64 quanto recreateData.qrcode?.base64
@@ -201,7 +201,7 @@ const initSocket = (io) => {
             } catch (err) {
               console.error(
                 "❌ Erro no polling da instância (create flow):",
-                err?.message || err
+                err?.message || err,
               );
             }
           }, 5000);
@@ -217,7 +217,7 @@ const initSocket = (io) => {
           checkData.instance?.state === "close"
         ) {
           console.log(
-            `🔁 Instância ${sessionId} em 'connecting', solicitando geração de QR (connect)...`
+            `🔁 Instância ${sessionId} em 'connecting', solicitando geração de QR (connect)...`,
           );
 
           // limpa qualquer intervalo existente antes de criar novo
@@ -232,7 +232,7 @@ const initSocket = (io) => {
                   "Content-Type": "application/json",
                   apikey: API_KEY,
                 },
-              }
+              },
             );
             const connectData = await connectResponse.json();
 
@@ -258,7 +258,7 @@ const initSocket = (io) => {
                       "Content-Type": "application/json",
                       apikey: API_KEY,
                     },
-                  }
+                  },
                 );
                 const qrData = await qrResponse.json();
 
@@ -283,7 +283,7 @@ const initSocket = (io) => {
                   });
                   socket.emit("qrcode_clear", { sessionId });
                   console.log(
-                    `✅ Instância ${sessionId} conectada, polling parado.`
+                    `✅ Instância ${sessionId} conectada, polling parado.`,
                   );
                   return;
                 }
@@ -293,7 +293,7 @@ const initSocket = (io) => {
                   !qrData.qrcode?.base64
                 ) {
                   console.log(
-                    "⚠️ Sessão desconectada sem QR; solicitando nova geração..."
+                    "⚠️ Sessão desconectada sem QR; solicitando nova geração...",
                   );
                   try {
                     const recreateResponse = await fetch(
@@ -304,7 +304,7 @@ const initSocket = (io) => {
                           "Content-Type": "application/json",
                           apikey: API_KEY,
                         },
-                      }
+                      },
                     );
                     const recreateData = await recreateResponse.json();
                     const newQr =
@@ -315,7 +315,7 @@ const initSocket = (io) => {
                         qrcode: newQr,
                       });
                       console.log(
-                        "🔄 Novo QR Code (connect) gerado e enviado ao front!"
+                        "🔄 Novo QR Code (connect) gerado e enviado ao front!",
                       );
                     }
                   } catch (err) {
@@ -325,7 +325,7 @@ const initSocket = (io) => {
               } catch (err) {
                 console.error(
                   "❌ Erro no polling da instância (connect flow):",
-                  err?.message || err
+                  err?.message || err,
                 );
               }
             }, 5000);
@@ -334,7 +334,7 @@ const initSocket = (io) => {
           } catch (err) {
             console.warn(
               "⚠️ Erro ao solicitar /instance/connect:",
-              err?.message || err
+              err?.message || err,
             );
           }
         }
@@ -361,7 +361,7 @@ const initSocket = (io) => {
           console.log(checkData);
           console.log(
             `ℹ️ Estado da instância (${sessionId}):`,
-            checkData.instance?.state
+            checkData.instance?.state,
           );
         }
       } catch (err) {
@@ -380,42 +380,16 @@ const initSocket = (io) => {
       const { sessionId, text, to } = data;
       if (!sessionId || !to || !text) return;
 
-      const lead = await searchLeadId({ id: to });
-
-      const msgId = uuidv4();
-      const msg = {
-        id: msgId,
-        direction: "outgoing",
-        text,
-        timestamp: new Date(),
-      };
-
-      saveMessage(sessionId, to, msg);
-
       try {
-        const sendResponse = await fetch(
-          `${EVOLUTION_API}/message/sendText/${sessionId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: API_KEY,
-            },
-            body: JSON.stringify({ number: lead.phone, text }),
-          }
-        );
+        await createNewMessageSendCRM({
+          sessionId,
+          leadId: to,
+          content: text,
+        });
 
-        if (!sendResponse.ok)
-          console.error(`⚠️ Falha ao enviar (${sendResponse.status})`);
-        else {
-          const data = await sendResponse.json();
-          data.instance = sessionId;
-          const createMessageCRM = await createNewMessageSendCRM({ data });
-
-          console.log(`✅ Enviado para Evolution (${to})`);
-        }
+        console.log("✅ Fluxo executado pelo service");
       } catch (err) {
-        console.error("❌ Erro ao enviar mensagem:", err?.message || err);
+        console.error("❌ Erro no fluxo:", err.message);
       }
     });
 

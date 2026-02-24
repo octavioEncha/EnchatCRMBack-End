@@ -101,13 +101,14 @@ export const createNewMessageSendCRM = async ({
   content,
   lead_id,
   conversation_id,
+  senderType,
 }) => {
   const { data: insertedMessage, error: insertError } = await supabase
     .from("messages")
     .insert([
       {
         conversation_id: conversation_id,
-        sender_type: "user",
+        sender_type: senderType ? senderType : "user",
         sender_id: lead_id,
         content,
       },

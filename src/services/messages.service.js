@@ -6,12 +6,14 @@ import { sendingWebhookMessage } from "./webhook.service.js";
 
 import * as messageModel from "../models/message.model.js";
 import * as attachmentModel from "../models/attachments.model.js";
+import { sendMessageToClientConnected } from "./websocket.service.js";
 
 import {
   sessions,
   ensureContact,
   saveMessage,
 } from "../services/session.service.js";
+import { text } from "express";
 
 /**
  * Retorna todas as mensagens de uma conversa específica
@@ -49,45 +51,40 @@ export const specificMessaByLeadId = async ({ lead_id }) => {
  * Cria nova mensagem a partir do recebimento via WhatsApp
  * Pode ser enviada pelo usuário (fromMe = true) ou pelo lead (fromMe = false)
  */
-export const createNewMessage = async ({ data, event, instance }) => {
+export const createNewMessage = async ({ data, instance }) => {
   try {
     const messageId = data?.key?.id;
+    if (!messageId) return null;
 
-    const existingMessage = await messageModel.getMessageById({ messageId });
-    if (existingMessage) {
-      console.log("⚠️ Mensagem já processada, ignorando:", messageId);
+    const verifyMessageById = await messageModel.getMessageById({ messageId });
+
+    if (verifyMessageById) {
       return null;
     }
-    console.log(messageId);
 
     const messageContent =
       data?.message?.conversation ||
       data?.message?.extendedTextMessage?.text ||
       data?.message?.base64 ||
       "";
-    let remoteJidRaw = "";
-    let lid = "";
 
-    if (data?.key?.remoteJid.endsWith("@s.whatsapp.net")) {
-      remoteJidRaw = data?.key?.remoteJid;
-      lid = data?.key?.remoteJidAlt.replace(/\D/g, "");
-      console.log("veio normal");
-    } else {
-      remoteJidRaw = data?.key?.remoteJidAlt;
-      lid = data?.key?.remoteJid.replace(/\D/g, "");
-    }
+    const remoteJid = data?.key?.remoteJid;
+    const remoteJidAlt = data?.key?.remoteJidAlt;
 
-    const phone = remoteJidRaw ? remoteJidRaw.replace(/\D/g, "") : null;
-    const sourceType = data?.messageType;
+    if (!remoteJid && !remoteJidAlt) return null;
 
+    const isWhatsAppJid = remoteJid?.endsWith("@s.whatsapp.net");
+    const remoteJidRaw = isWhatsAppJid ? remoteJid : remoteJidAlt;
+
+    const phone = remoteJidRaw?.replace(/\D/g, "");
     const fromMe = data?.key?.fromMe;
 
-    if (!phone) {
-      console.warn("⚠️ Dados insuficientes:", { phone, messageContent });
-      return null;
-    }
+    if (!phone) return null;
 
-    // Busca ou cria o lead
+    // ==============================
+    // 🔎 BUSCA OU CRIA LEAD
+    // ==============================
+
     let lead = await leadsService.searchLead({ phone, instance });
 
     if (!lead) {
@@ -95,105 +92,161 @@ export const createNewMessage = async ({ data, event, instance }) => {
         data,
         phone,
         instance,
-        lid,
       });
+      if (!lead) throw new Error("Erro ao criar lead");
     }
 
-    // Busca ou cria a conversa
+    // ==============================
+    // 🔎 BUSCA OU CRIA CONVERSA
+    // ==============================
+
     let conversation = await conversationService.searchConversation({
       lead_id: lead.id,
     });
 
     if (!conversation) {
       conversation = await conversationService.createNewConversation({
-        data: { user_id: lead.user_id, lead_id: lead.id, instance },
+        data: {
+          user_id: lead.user_id,
+          lead_id: lead.id,
+          inbox_id: instance,
+        },
       });
-      if (!conversation) {
-        console.warn("⚠️ Falha ao criar conversa.");
-        return null;
-      }
+
+      if (!conversation) throw new Error("Erro ao criar conversa");
     }
 
-    // Define tipo de remetentecd
-    const senderType = fromMe ? "user" : "lead";
+    // ==============================
+    // 💾 SALVA MENSAGEM DO LEAD
+    // ==============================
 
-    let dataMessage = {};
-
-    let createNewMessage = null;
-
-    if (
-      sourceType === "documentMessage" ||
-      sourceType === "audioMessage" ||
-      sourceType === "imageMessage" ||
-      sourceType === "stickerMessage" ||
-      sourceType === "videoMessage"
-    ) {
-      const buffer = Buffer.from(messageContent, "base64");
-      const mymeTypeMap = {
-        documentMessage: "application/pdf",
-        audioMessage: "audio/mpeg",
-        imageMessage: "image/jpeg",
-        videoMessage: "video/mp4",
-        stickerMessage: "image/jpeg",
-      };
-      const contentType = mymeTypeMap[sourceType] || "application/octet-stream";
-      const uploadResult = await attachmentModel.uploadAttachment({
-        buffer,
-        contentType,
-      });
-
-      let messageType = sourceType;
-
-      if (sourceType === "stickerMessage") {
-        messageType = "imageMessage";
-      }
-      dataMessage = {
+    const createdMessage = await messageModel.createMessage({
+      data: {
         conversation_id: conversation.id,
-        senderType,
         lead_id: lead.id,
-        attachmentUrl: uploadResult,
-        messageType,
-        messageId,
-      };
-
-      createNewMessage = await messageModel.createMessageWithAttachment({
-        data: dataMessage,
-      });
-    } else {
-      dataMessage = {
-        conversation_id: conversation.id,
-        senderType,
-        lead_id: lead.id,
+        inbox: instance,
+        senderType: fromMe ? "user" : "lead",
+        mediaType: "text",
         messageContent,
         messageId,
-      };
-      createNewMessage = await messageModel.createMessage({
-        data: dataMessage,
+      },
+    });
+
+    if (!createdMessage) throw new Error("Erro ao salvar mensagem");
+
+    await messageModel.updateLastMessageTimestamp({
+      conversationId: conversation.id,
+    });
+
+    // ==============================
+    // 📡 ENVIA PARA O FRONT
+    // ==============================
+
+    const finalMessage = {
+      id: createdMessage.id,
+      conversation_id: conversation.id,
+      lead_id: lead.id,
+      direction: fromMe ? "outgoing" : "incoming",
+      text: messageContent,
+      timestamp: new Date(),
+      contact: lead.phone,
+      user: lead.name,
+      avatar: lead.avatar,
+      ai_enabled: conversation.ai_enabled,
+    };
+
+    await sendMessageToClientConnected({ instance, finalMessage });
+
+    // ==============================
+    // 🤖 FLUXO IA
+    // ==============================
+
+    if (conversation.ai_enabled && !fromMe) {
+      // IA digitando...
+      await sendMessageToClientConnected({
+        instance,
+        finalMessage: {
+          id: "typing-" + Date.now(),
+          conversation_id: conversation.id,
+          lead_id: lead.id,
+          direction: "IA",
+          text: "IA digitando...",
+          timestamp: new Date(),
+          contact: lead.phone,
+          user: "IA",
+        },
       });
 
-      if (!createNewMessage) {
-        throw new Error("Falha ao criar nova mensagem.");
-      }
-    }
-    const updateLastMessageTimestamp =
+      // Chama webhook IA
+      const aiResponse = await sendingWebhookMessage({
+        webhookURL:
+          "https://serverpoint.enchat.in/webhook/9a7018a4-b6ee-4c16-8b40-0d73098e4a54",
+        content: {
+          conversation_id: conversation.id,
+          message: messageContent,
+          lead_id: lead.id,
+          inbox: conversation.inbox_id,
+        },
+      });
+
+      if (!aiResponse?.output) return;
+
+      // ==============================
+      // 📤 ENVIA RESPOSTA PARA LEAD (EVOLUTION)
+      // ==============================
+
+      await fetch(
+        `https://edvedder.encha.com.br/message/sendText/${instance}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
+          },
+          body: JSON.stringify({
+            number: lead.phone,
+            text: aiResponse.output,
+          }),
+        },
+      );
+
+      // ==============================
+      // 💾 SALVA RESPOSTA IA
+      // ==============================
+
+      const aiSaved = await messageModel.createNewMessageSendCRM({
+        content: aiResponse.output,
+        lead_id: lead.id,
+        conversation_id: conversation.id,
+        senderType: "IA",
+      });
+
       await messageModel.updateLastMessageTimestamp({
         conversationId: conversation.id,
       });
-    if (conversation.ai_enabled) {
-      const profile = await findProfileById({ id: instance });
-      const sendingWebhook = await sendingWebhookMessage({
-        webhookURL: profile.webhook_url,
-        content: dataMessage,
+
+      // ==============================
+      // 📡 ENVIA RESPOSTA IA PRO FRONT
+      // ==============================
+
+      await sendMessageToClientConnected({
+        instance,
+        finalMessage: {
+          id: aiSaved.id,
+          conversation_id: conversation.id,
+          lead_id: lead.id,
+          direction: "IA",
+          text: aiResponse.output,
+          timestamp: new Date(),
+          contact: lead.phone,
+          user: "IA",
+        },
       });
     }
 
-    return {
-      lead,
-      conversation,
-      message: createNewMessage,
-    };
+    return { lead, conversation };
   } catch (err) {
-    console.error("❌ Erro inesperado em createNewMessage:", err.message);
+    console.error("❌ Erro inesperado:", err);
     return null;
   }
 };
@@ -246,85 +299,115 @@ export const createMessageForShootingToLead = async ({
     return null;
   }
 };
-/**
- * Cria nova mensagem enviada manualmente pelo CRM (via interface)
- */
-export const createNewMessageSendCRM = async ({ data, instance }) => {
+
+export const createNewMessageSendCRM = async ({
+  sessionId,
+  leadId,
+  content,
+}) => {
   try {
-    const phone = data?.key?.remoteJid?.replace(/\D/g, "");
-    const content = data?.message?.conversation;
-
-    if (!phone || !content) {
-      console.warn("⚠️ Dados insuficientes:", { phone, content });
-      return null;
+    if (!sessionId || !leadId || !content) {
+      throw new Error("Dados insuficientes");
     }
 
-    // Busca ou cria o lead
-    let lead = await leadsService.searchLead({
-      phone,
-      instance: data.instance,
-    });
-    if (!lead) {
-      lead = await leadsService.createNewLead({ data, phone });
-      if (!lead) {
-        console.warn("⚠️ Falha ao criar lead.");
-        return null;
-      }
-    }
+    // 🔎 Busca lead
+    const lead = await leadsService.searchLeadId({ id: leadId });
+    if (!lead) throw new Error("Lead não encontrado");
 
-    // Busca ou cria a conversa
+    // 🔎 Busca ou cria conversa
     let conversation = await conversationService.searchConversation({
       lead_id: lead.id,
     });
 
     if (!conversation) {
       conversation = await conversationService.createNewConversation({
-        data: { user_id: lead.user_id, lead_id: lead.id },
+        data: {
+          user_id: lead.user_id,
+          lead_id: lead.id,
+          inbox_id: sessionId,
+        },
       });
-      if (!conversation) {
-        console.warn("⚠️ Falha ao criar conversa.");
-        return null;
-      }
+
+      if (!conversation) throw new Error("Erro ao criar conversa");
     }
 
-    const createNewMessage = await messageModel.createNewMessageSendCRM({
+    // 💾 Salva no banco
+    const createdMessage = await messageModel.createNewMessageSendCRM({
       content,
       lead_id: lead.id,
       conversation_id: conversation.id,
+      senderType: user,
     });
-    if (!createNewMessage) {
-      throw new Error("Falha ao criar nova mensagem via CRM.");
+
+    if (!createdMessage) {
+      throw new Error("Erro ao salvar mensagem");
     }
 
-    const updateLastMessageTimestamp =
-      await messageModel.updateLastMessageTimestamp({
-        conversationId: conversation.id,
-      });
+    await messageModel.updateLastMessageTimestamp({
+      conversationId: conversation.id,
+    });
 
-    console.log("✅ Mensagem criada via CRM:", createNewMessage.content);
-    return { lead, conversation, message: createNewMessage };
+    // 📤 Envia para Evolution
+    const response = await fetch(
+      `https://edvedder.encha.com.br/message/sendText/${sessionId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
+        },
+        body: JSON.stringify({
+          number: lead.phone,
+          text: content,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      console.error(`⚠️ Falha ao enviar (${response.status})`);
+    }
+
+    // 📡 Emite no socket
+    const finalMessage = {
+      id: createdMessage.id,
+      conversation_id: conversation.id,
+      lead_id: lead.id,
+      direction: "outgoing",
+      text: content,
+      timestamp: new Date(),
+      contact: lead.phone,
+      user: lead.name,
+    };
+
+    await sendMessageToClientConnected({
+      instance: sessionId,
+      finalMessage,
+    });
+
+    return { lead, conversation, message: createdMessage };
   } catch (err) {
     console.error("❌ Erro em createNewMessageSendCRM:", err.message);
-    return null;
+    throw err;
   }
 };
 
 export const sendMessage = async ({ data }) => {
   const searchLead = await leadsService.searchLeadId({ id: data.lead_id });
-  console.log(searchLead);
+
   let searchConvers = await conversationService.searchConversation({
     lead_id: data.lead_id,
   });
   if (!searchConvers) {
     const leadData = {
-      instance: data.user_id,
-      user_id: data.user_id,
+      inbox_id: data.user_id,
       lead_id: data.lead_id,
     };
     searchConvers = await conversationService.createNewConversation({
       data: leadData,
     });
   }
+
+  data.user_id;
 
   const response = await fetch(
     `https://edvedder.encha.com.br/message/sendText/${data.user_id}`,
@@ -352,6 +435,7 @@ export const sendMessage = async ({ data }) => {
     content: data.content,
     lead_id: searchLead.id,
     conversation_id: searchConvers.id,
+    senderType: "user",
   });
   if (!createNewMessage) {
     throw new Error("Falha ao criar nova mensagem via CRM.");

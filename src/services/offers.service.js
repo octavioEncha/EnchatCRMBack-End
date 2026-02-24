@@ -55,6 +55,14 @@ export const getAllOffersByUserId = async (id) => {
   return offers.map((offer) => new Offer(offer));
 };
 
+export const getAllOffersAndProductsByInboxId = async ({ inbox_id }) => {
+  const allOffers = await offersModel.getAllOffersAndProductsByInboxId({
+    inbox_id,
+  });
+
+  return allOffers;
+};
+
 export const updateOfferById = async ({ id, data }) => {
   await findByIdOrThrow(id);
 
