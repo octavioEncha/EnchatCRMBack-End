@@ -8,18 +8,56 @@ import {
 } from "./pipeline.service.js";
 import { findInboxByIdOrThrow } from "./inbox.service.js";
 
-//ARRUMAR PARA ALÉM DE ENVIAR O NÚMERO, ENVIAR O USER_ID
+/* =====================================================
+   NORMALIZADOR DE TELEFONE (PADRÃO BRASIL)
+   ===================================================== */
+const normalizePhone = (phone) => {
+  if (!phone) return null;
+
+  let digits = String(phone).replace(/\D/g, "");
+  if (!digits) return null;
+
+  // Remove 55 se já existir
+  if (digits.startsWith("55")) {
+    digits = digits.substring(2);
+  }
+
+  // Agora temos DDD + número
+  if (digits.length === 10) {
+    const firstDigit = digits.charAt(2);
+
+    // Fixo (2-5) → não adiciona 9
+    if (firstDigit >= "2" && firstDigit <= "5") {
+      return "55" + digits;
+    }
+
+    // Celular antigo → adiciona 9
+    digits = digits.substring(0, 2) + "9" + digits.substring(2);
+  }
+
+  return "55" + digits;
+};
+
+/* =====================================================
+   SEARCH LEAD
+   ===================================================== */
 export const searchLead = async ({ phone, instance }) => {
   const inbox = await findInboxByIdOrThrow({ id: instance });
 
+  const normalizedPhone = normalizePhone(phone);
+  if (!normalizedPhone) return null;
+
   const lead = await leadModel.searchLeadPhone({
-    phone,
+    phone: normalizedPhone,
     instance: inbox.user_id,
   });
 
   return lead;
 };
 
+/* =====================================================
+   SEARCH LEAD BY ID
+   ===================================================== */
 export const searchLeadId = async ({ id }) => {
   const searchLeadId = await leadModel.searchLeadId({ id });
 
@@ -31,11 +69,30 @@ export const searchLeadId = async ({ id }) => {
   return searchLeadId;
 };
 
+/* =====================================================
+   CREATE NEW LEAD
+   ===================================================== */
 export const createNewLead = async ({ data, phone, instance, lid }) => {
   const searchInbox = await findInboxByIdOrThrow({ id: instance });
 
   if (!searchInbox) {
-    throw new Error("❌ Erro ao buscar canal:");
+    throw new Error("❌ Erro ao buscar canal");
+  }
+
+  const normalizedPhone = normalizePhone(phone);
+
+  if (!normalizedPhone) {
+    throw new Error("Telefone inválido");
+  }
+
+  // 🔥 Verifica duplicidade antes de criar
+  const existingLead = await leadModel.searchLeadPhone({
+    phone: normalizedPhone,
+    instance: searchInbox.user_id,
+  });
+
+  if (existingLead) {
+    return existingLead;
   }
 
   const searchPipeline = await seachPipelineById({
@@ -44,45 +101,43 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
 
   const response = await fetch(
     `https://edvedder.encha.com.br/chat/fetchProfile/${instance}`,
-    //`http://localhost:8081/chat/fetchProfile/${instance}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
-        //apikey: "meu_token_secreto",
       },
-      body: JSON.stringify({ number: phone }),
+      body: JSON.stringify({ number: normalizedPhone }),
     },
   );
 
   const profile = await response.json();
 
-  console.log(profile);
-
   const leadData = {
     user_id: searchInbox.user_id,
-    name: profile.name || String(phone),
+    name: profile.name || normalizedPhone,
     avatar:
       profile.picture ||
       "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
     email: "",
-    phone: phone,
+    phone: normalizedPhone,
     source: "crm",
     lid,
-    //pipeline_id: null,
     pipeline_id: searchPipeline.id,
   };
 
-  const createNewLead = await leadModel.createLead({ data: leadData });
-  console.log(createNewLead);
-  if (!createNewLead) {
-    throw new Error("Error ao criar novo lead.");
+  const newLead = await leadModel.createLead({ data: leadData });
+
+  if (!newLead) {
+    throw new Error("Erro ao criar novo lead.");
   }
 
-  return createNewLead;
+  return newLead;
 };
 
+/* =====================================================
+   IMPORT LEADS VIA XLSX
+   ===================================================== */
 export const importLead = async ({ file, pipelineId }) => {
   if (!file || !file.path) {
     throw new Error("Arquivo inválido.");
@@ -91,7 +146,6 @@ export const importLead = async ({ file, pipelineId }) => {
   const searchPipeline = await seachPipelineById({ id: pipelineId });
   const instance = searchPipeline.user_id;
 
-  // Quantos ainda podem ser importados
   const leadCount = await leadModel.countLeadsByUserId({ user_id: instance });
   const limit = Math.max(0, 1000 - leadCount.length);
 
@@ -114,18 +168,15 @@ export const importLead = async ({ file, pipelineId }) => {
   let errors = [];
 
   for (const item of rows) {
-    // 🛑 Para quando bater o limite de SUCESSO
-    if (importedCount >= limit) {
-      break;
-    }
+    if (importedCount >= limit) break;
 
-    // ✅ Validação correta
     if (!item.nome || !item.email || !item.telefone) {
       errors.push({ item, error: "Dados incompletos" });
       continue;
     }
 
-    const phone = String(item.telefone).replace(/\D/g, "");
+    const phone = normalizePhone(item.telefone);
+
     if (!phone) {
       errors.push({ item, error: "Telefone inválido" });
       continue;
@@ -146,7 +197,6 @@ export const importLead = async ({ file, pipelineId }) => {
         ? null
         : Number(item.valor);
 
-    // 🔥 Só busca profile se realmente vai salvar
     let profile = {};
     try {
       const response = await fetch(
@@ -162,8 +212,7 @@ export const importLead = async ({ file, pipelineId }) => {
       );
 
       profile = await response.json();
-    } catch (err) {
-      // não quebra a importação por causa disso
+    } catch {
       profile = {};
     }
 
@@ -189,6 +238,7 @@ export const importLead = async ({ file, pipelineId }) => {
     };
 
     await leadModel.createLead({ data: leadData });
+
     importedCount++;
   }
 
@@ -200,14 +250,14 @@ export const importLead = async ({ file, pipelineId }) => {
   };
 };
 
+/* =====================================================
+   PREVIEW IMPORT LIMIT
+   ===================================================== */
 export const previewImportLeads = async ({ id }) => {
-  const searchPipelin = await seachPipelineById({ id });
-
-  const instance = searchPipelin.user_id;
+  const searchPipeline = await seachPipelineById({ id });
+  const instance = searchPipeline.user_id;
 
   const leadCount = await leadModel.countLeadsByUserId({ user_id: instance });
 
-  const result = 1000 - leadCount.length;
-
-  return result;
+  return 1000 - leadCount.length;
 };

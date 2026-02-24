@@ -155,7 +155,7 @@ export const createNewMessage = async ({ data, instance }) => {
       ai_enabled: conversation.ai_enabled,
     };
 
-    await sendMessageToClientConnected({ instance, finalMessage });
+    //await sendMessageToClientConnected({ instance, finalMessage });
 
     // ==============================
     // 🤖 FLUXO IA
@@ -164,7 +164,7 @@ export const createNewMessage = async ({ data, instance }) => {
     if (conversation.ai_enabled && !fromMe) {
       // IA digitando...
       await sendMessageToClientConnected({
-        instance,
+        // instance,
         finalMessage: {
           id: "typing-" + Date.now(),
           conversation_id: conversation.id,

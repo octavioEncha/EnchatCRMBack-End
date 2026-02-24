@@ -43,7 +43,7 @@ export const sendingWebhookMessage = async ({ webhookURL, content }) => {
 
     const responseData = await response.json();
 
-    return responseData.output;
+    return responseData;
   } catch (err) {
     console.error("❌ Erro ao enviar mensagem para o webhook:", err.message);
     return null;
