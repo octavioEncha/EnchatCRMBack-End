@@ -164,7 +164,7 @@ export const createNewMessage = async ({ data, instance }) => {
     if (conversation.ai_enabled && !fromMe) {
       // IA digitando...
       await sendMessageToClientConnected({
-        // instance,
+        instance,
         finalMessage: {
           id: "typing-" + Date.now(),
           conversation_id: conversation.id,
