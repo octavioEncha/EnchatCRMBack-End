@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Templates WhatsApp</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0d0f12;
+        --surface: #161a20;
+        --surface2: #1e242d;
+        --border: #2a3040;
+        --accent: #25d366;
+        --accent2: #128c7e;
+        --danger: #ff4d4d;
+        --warn: #ffc107;
+        --text: #e8eaed;
+        --muted: #6b7280;
+        --mono: "IBM Plex Mono", monospace;
+        --sans: "IBM Plex Sans", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+      .wrapper {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+      }
+      header {
+        grid-column: 1/-1;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 24px;
+      }
+      .logo {
+        width: 40px;
+        height: 40px;
+        background: var(--accent);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+      header h1 {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      header p {
+        font-size: 13px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .builder {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .section-title {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        padding: 10px 12px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+      }
+      select option {
+        background: #1e242d;
+      }
+      textarea {
+        resize: vertical;
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+      .presets {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .preset-btn {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.15s;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 12px;
+      }
+      .preset-btn:hover {
+        border-color: var(--accent);
+        background: #1a2820;
+      }
+      .preset-btn.active {
+        border-color: var(--accent);
+        background: #1a2820;
+      }
+      .preset-name {
+        font-weight: 700;
+        font-size: 13px;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .preset-desc {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.4;
+        margin-top: 4px;
+      }
+      .cat-badge {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+      }
+      .cat-MARKETING {
+        background: #3a2000;
+        color: #ffa724;
+      }
+      .cat-UTILITY {
+        background: #001a3a;
+        color: #4da6ff;
+      }
+      .cat-AUTHENTICATION {
+        background: #1a003a;
+        color: #c47aff;
+      }
+      #dynamic-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .block {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .block-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .block-icon {
+        font-size: 12px;
+        font-family: var(--mono);
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 5px;
+        background: var(--border);
+        color: var(--accent);
+      }
+      .block-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .var-hint {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--mono);
+        margin-top: 5px;
+      }
+      .var-hint span {
+        color: var(--accent);
+        background: #0d2018;
+        padding: 1px 5px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .btn-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        align-items: end;
+      }
+      .btn-type-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 4px;
+        margin-bottom: 6px;
+      }
+      .badge-QR {
+        background: #1a2820;
+        color: var(--accent);
+        border: 1px solid #2a4035;
+      }
+      .badge-URL {
+        background: #001a3a;
+        color: #4da6ff;
+        border: 1px solid #0a2545;
+      }
+      .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 10px;
+        font-family: var(--sans);
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 0.3px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .submit-btn:hover {
+        background: #20c058;
+        transform: translateY(-1px);
+      }
+      .submit-btn:active {
+        transform: translateY(0);
+      }
+      .submit-btn:disabled {
+        background: #1e3327;
+        color: var(--muted);
+        cursor: not-allowed;
+        transform: none;
+      }
+      .msg {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        display: none;
+      }
+      .msg.show {
+        display: block;
+      }
+      .msg.success {
+        background: #0d2018;
+        color: var(--accent);
+        border: 1px solid #1a3325;
+      }
+      .msg.error {
+        background: #2a0808;
+        color: var(--danger);
+        border: 1px solid #4a1010;
+      }
+      .right-col {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .wa-preview-wrapper {
+        background: #0b141a;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #1c2b33;
+      }
+      .wa-header-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #1c2b33;
+        margin-bottom: 16px;
+      }
+      .wa-avatar {
+        width: 36px;
+        height: 36px;
+        background: var(--accent2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .wa-contact {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .wa-status {
+        font-size: 11px;
+        color: var(--accent);
+      }
+      .wa-bubble-wrapper {
+        padding: 8px 0;
+      }
+      .wa-bubble {
+        background: #202c33;
+        border-radius: 0 10px 10px 10px;
+        max-width: 85%;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+      .wa-img-placeholder {
+        background: #2a3942;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-size: 30px;
+      }
+      .wa-header-txt {
+        padding: 10px 12px 6px;
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .wa-body {
+        padding: 6px 12px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #d1d7db;
+      }
+      .wa-footer {
+        padding: 4px 12px 10px;
+        font-size: 11px;
+        color: #8696a0;
+      }
+      .wa-divider {
+        height: 1px;
+        background: #2a3942;
+      }
+      .wa-buttons {
+        display: flex;
+        flex-direction: column;
+      }
+      .wa-btn {
+        padding: 10px 12px;
+        text-align: center;
+        color: #53bdeb;
+        font-size: 13px;
+        font-weight: 600;
+        border-top: 1px solid #2a3942;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .wa-time {
+        text-align: right;
+        padding: 4px 8px 6px;
+        font-size: 10px;
+        color: #8696a0;
+        font-family: var(--mono);
+      }
+      .tpl-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 700px;
+        overflow-y: auto;
+      }
+      .tpl-item {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        transition: border-color 0.15s;
+      }
+      .tpl-item:hover {
+        border-color: #3a4555;
+      }
+      .tpl-item.open {
+        border-color: var(--accent);
+      }
+      .tpl-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .tpl-name {
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .tpl-chevron {
+        font-size: 11px;
+        color: var(--muted);
+        transition: transform 0.2s;
+        flex-shrink: 0;
+      }
+      .tpl-item.open .tpl-chevron {
+        transform: rotate(180deg);
+        color: var(--accent);
+      }
+      .tpl-body {
+        display: none;
+        border-top: 1px solid var(--border);
+        padding: 14px;
+        gap: 10px;
+        flex-direction: column;
+      }
+      .tpl-item.open .tpl-body {
+        display: flex;
+      }
+      .tpl-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+        font-size: 12px;
+      }
+      .detail-block {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .detail-block-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #12161c;
+      }
+      .detail-block-type {
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--accent);
+        background: var(--border);
+        padding: 2px 7px;
+        border-radius: 4px;
+      }
+      .detail-block-fmt {
+        font-size: 10px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+      .detail-block-content {
+        padding: 10px 12px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #c9d1d9;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .detail-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 12px;
+      }
+      .detail-btn-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 7px 10px;
+        font-size: 12px;
+        flex-wrap: wrap;
+      }
+      .detail-btn-type {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 3px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .detail-btn-text {
+        font-weight: 600;
+      }
+      .detail-btn-url {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #4da6ff;
+        word-break: break-all;
+        width: 100%;
+        margin-top: 3px;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-APPROVED {
+        background: var(--accent);
+      }
+      .dot-PENDING {
+        background: var(--warn);
+      }
+      .dot-REJECTED {
+        background: var(--danger);
+      }
+      .status-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+      .sl-APPROVED {
+        color: var(--accent);
+      }
+      .sl-PENDING {
+        color: var(--warn);
+      }
+      .sl-REJECTED {
+        color: var(--danger);
+      }
+      .tpl-list-loading {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 20px;
+        font-family: var(--mono);
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      @media (max-width: 800px) {
+        .wrapper {
+          grid-template-columns: 1fr;
+        }
+        header {
+          grid-column: 1;
+        }
+        .presets {
+          grid-template-columns: 1fr;
+        }
+      }
+      .ex-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        padding: 6px 12px 10px;
+        border-top: 1px dashed var(--border);
+      }
+      .ex-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 2px 6px;
+        background: var(--border);
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      .ex-pill {
+        font-size: 11px;
+        font-family: var(--mono);
+        background: #0d1a10;
+        border: 1px solid #1a3020;
+        color: #7fe89a;
+        padding: 2px 8px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .ex-var {
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      /* ── Delete button ── */
+      .delete-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+        padding: 8px 14px;
+        background: transparent;
+        border: 1px solid #4a1010;
+        border-radius: 8px;
+        color: var(--danger);
+        font-family: var(--sans);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 0.3px;
+        transition: all 0.18s;
+        align-self: flex-start;
+      }
+      .delete-btn:hover {
+        background: #2a0808;
+        border-color: var(--danger);
+      }
+      .delete-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .delete-btn svg {
+        flex-shrink: 0;
+      }
+
+      /* ── Confirm overlay ── */
+      .confirm-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .confirm-overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .confirm-box {
+        background: var(--surface);
+        border: 1px solid #4a1010;
+        border-radius: 14px;
+        padding: 28px 28px 24px;
+        max-width: 380px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        transform: translateY(10px);
+        transition: transform 0.2s;
+      }
+      .confirm-overlay.visible .confirm-box {
+        transform: translateY(0);
+      }
+      .confirm-icon {
+        font-size: 28px;
+        margin-bottom: 12px;
+      }
+      .confirm-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+      .confirm-desc {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 6px;
+      }
+      .confirm-name {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--danger);
+        background: #2a0808;
+        border: 1px solid #4a1010;
+        border-radius: 6px;
+        padding: 6px 10px;
+        margin-bottom: 20px;
+        word-break: break-all;
+      }
+      .confirm-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .confirm-cancel {
+        flex: 1;
+        padding: 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .confirm-cancel:hover {
+        border-color: #3a4555;
+        background: #252d38;
+      }
+      .confirm-delete {
+        flex: 1;
+        padding: 10px;
+        background: #2a0808;
+        border: 1px solid var(--danger);
+        border-radius: 8px;
+        color: var(--danger);
+        font-family: var(--sans);
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .confirm-delete:hover {
+        background: #3d0c0c;
+      }
+      .confirm-delete:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Confirm delete overlay -->
+    <div class="confirm-overlay" id="confirm-overlay">
+      <div class="confirm-box">
+        <div class="confirm-icon">🗑️</div>
+        <div class="confirm-title">Excluir template?</div>
+        <div class="confirm-desc">
+          Esta ação é irreversível. O template será removido permanentemente da
+          sua conta WABA.
+        </div>
+        <div class="confirm-name" id="confirm-tpl-label">—</div>
+        <div class="confirm-actions">
+          <button class="confirm-cancel" onclick="closeConfirm()">
+            Cancelar
+          </button>
+          <button
+            class="confirm-delete"
+            id="confirm-delete-btn"
+            onclick="confirmDelete()"
+          >
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wrapper">
+      <header>
+        <div class="logo">💬</div>
+        <div>
+          <h1>Templates WhatsApp</h1>
+          <p>Business API · WABA 26801374196130743</p>
+        </div>
+      </header>
+
+      <div class="builder">
+        <div class="card">
+          <div class="section-title">Identificação</div>
+          <div class="field">
+            <label>Nome do template</label>
+            <input id="name" placeholder="ex: promo_verao_2026" />
+          </div>
+          <div class="field">
+            <label>Idioma</label>
+            <select id="language">
+              <option value="pt_BR">pt_BR — Português (Brasil)</option>
+              <option value="en_US">en_US — English (US)</option>
+              <option value="es_AR">es_AR — Español (Argentina)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Estrutura do template</div>
+          <div class="presets" id="presets-grid"></div>
+        </div>
+
+        <div class="card" id="fields-card" style="display: none">
+          <div class="section-title">Conteúdo dos blocos</div>
+          <div id="dynamic-fields"></div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <button
+            class="submit-btn"
+            id="submit-btn"
+            disabled
+            onclick="createTemplate()"
+          >
+            <span>Criar Template</span>
+          </button>
+          <div class="msg" id="msg"></div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="wa-preview-wrapper">
+          <div class="wa-header-bar">
+            <div class="wa-avatar">🤖</div>
+            <div>
+              <div class="wa-contact">Minha Empresa</div>
+              <div class="wa-status">✓ Conta comercial verificada</div>
+            </div>
+          </div>
+          <div class="wa-bubble-wrapper" id="wa-preview">
+            <div
+              style="
+                color: #6b7280;
+                font-size: 13px;
+                text-align: center;
+                padding: 20px;
+                font-family: var(--mono);
+              "
+            >
+              ← Selecione uma estrutura para prévia
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Templates existentes</div>
+          <div class="tpl-list" id="tpl-list">
+            <div class="tpl-list-loading">Carregando…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const API_BASE = "http://localhost:4000/wap-official/template";
+      const WABA_ID = "26801374196130743";
+
+      // ── Delete state ──
+      let pendingDelete = null; // { id, name }
+
+      function openConfirm(id, name) {
+        pendingDelete = { id, name };
+        document.getElementById("confirm-tpl-label").textContent =
+          `ID: ${id}  ·  ${name}`;
+        document.getElementById("confirm-overlay").classList.add("visible");
+        document.getElementById("confirm-delete-btn").disabled = false;
+        document.getElementById("confirm-delete-btn").textContent = "Excluir";
+      }
+
+      function closeConfirm() {
+        document.getElementById("confirm-overlay").classList.remove("visible");
+        pendingDelete = null;
+      }
+
+      // Close overlay on backdrop click
+      document
+        .getElementById("confirm-overlay")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeConfirm();
+        });
+
+      async function confirmDelete() {
+        if (!pendingDelete) return;
+        const { id, name } = pendingDelete;
+        const btn = document.getElementById("confirm-delete-btn");
+        btn.disabled = true;
+        btn.textContent = "Excluindo…";
+        try {
+          const res = await fetch(
+            `${API_BASE}/${encodeURIComponent(id)}?name=${encodeURIComponent(name)}`,
+            { method: "DELETE" },
+          );
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || `Erro ${res.status}`);
+          }
+          closeConfirm();
+          loadTemplates();
+        } catch (e) {
+          btn.disabled = false;
+          btn.textContent = "Excluir";
+          alert("❌ " + e.message);
+        }
+      }
+
+      // ────────────────────────────────────────────
+
+      const STRUCTURES = [
+        {
+          id: "notificacao_simples",
+          label: "Notificação simples",
+          icon: "🔔",
+          desc: "Apenas BODY",
+          category: "UTILITY",
+          blocks: ["BODY"],
+        },
+        {
+          id: "pedido_aprovado",
+          label: "Header + Body + Footer",
+          icon: "📦",
+          desc: "Cabeçalho em texto",
+          category: "UTILITY",
+          blocks: ["HEADER_TEXT", "BODY", "FOOTER"],
+        },
+        {
+          id: "promo_imagem",
+          label: "Promo com Imagem",
+          icon: "🖼️",
+          desc: "Header imagem + rodapé",
+          category: "MARKETING",
+          blocks: ["HEADER_IMAGE", "BODY", "FOOTER"],
+        },
+        {
+          id: "confirmacao_qr",
+          label: "Quick Replies",
+          icon: "✅",
+          desc: "Body + botões rápidos",
+          category: "UTILITY",
+          blocks: ["BODY", "BUTTONS_QR"],
+        },
+        {
+          id: "acesso_portal",
+          label: "Botão URL",
+          icon: "🔗",
+          desc: "Body + botão com link",
+          category: "UTILITY",
+          blocks: ["BODY", "BUTTONS_URL"],
+        },
+        {
+          id: "codigo_verificacao",
+          label: "Autenticação",
+          icon: "🔒",
+          desc: "Código de verificação",
+          category: "AUTHENTICATION",
+          blocks: ["BODY"],
+        },
+        {
+          id: "promo_completa",
+          label: "Promo Completa",
+          icon: "🔥",
+          desc: "Header+Body+Footer+Botões",
+          category: "MARKETING",
+          blocks: ["HEADER_TEXT", "BODY", "FOOTER", "BUTTONS_MIXED"],
+        },
+      ];
+
+      let selected = null;
+
+      function renderPresets() {
+        const grid = document.getElementById("presets-grid");
+        STRUCTURES.forEach((s) => {
+          const btn = document.createElement("button");
+          btn.className = "preset-btn";
+          btn.id = "preset-" + s.id;
+          btn.onclick = () => selectStructure(s.id);
+          btn.innerHTML = `<div class="preset-name">${s.icon} ${s.label} <span class="cat-badge cat-${s.category}">${s.category}</span></div><div class="preset-desc">${s.desc}</div>`;
+          grid.appendChild(btn);
+        });
+      }
+
+      function selectStructure(id) {
+        document
+          .querySelectorAll(".preset-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("preset-" + id).classList.add("active");
+        selected = STRUCTURES.find((s) => s.id === id);
+        document.getElementById("fields-card").style.display = "block";
+        document.getElementById("submit-btn").disabled = false;
+        document.getElementById("msg").className = "msg";
+        renderDynamicFields();
+        renderPreview();
+      }
+
+      function varHint(...vars) {
+        return `<div class="var-hint">Clique para inserir: ${vars.map((v) => `<span onclick="insertVar(this,'${v}')">${v}</span>`).join(" ")}</div>`;
+      }
+
+      function renderDynamicFields() {
+        const c = document.getElementById("dynamic-fields");
+        c.innerHTML = "";
+        selected.blocks.forEach((block) => {
+          const div = document.createElement("div");
+          div.className = "block";
+          if (block === "HEADER_TEXT") {
+            div.innerHTML = `<div class="block-header"><span class="block-icon">HDR</span><span class="block-label">Header — Texto</span></div>
+        <div class="field"><label>Texto do cabeçalho</label><input id="header_text" placeholder="ex: Pedido #{{1}} confirmado" oninput="renderPreview()" />${varHint("{{1}}")}</div>`;
+          } else if (block === "HEADER_IMAGE") {
+            div.innerHTML = `<div class="block-header"><span class="block-icon">HDR</span><span class="block-label">Header — Imagem</span></div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6">📎 A imagem será enviada dinamicamente no momento do disparo. Nenhum campo necessário aqui.</p>`;
+          } else if (block === "BODY") {
+            div.innerHTML = `<div class="block-header"><span class="block-icon">BDY</span><span class="block-label">Body</span></div>
+        <div class="field"><label>Texto da mensagem</label><textarea id="body_text" rows="3" placeholder="ex: Olá {{1}}, seu pedido de R$ {{2}} foi aprovado!" oninput="renderPreview()"></textarea>${varHint("{{1}}", "{{2}}", "{{3}}")}</div>`;
+          } else if (block === "FOOTER") {
+            div.innerHTML = `<div class="block-header"><span class="block-icon">FTR</span><span class="block-label">Footer</span></div>
+        <div class="field"><label>Texto do rodapé</label><input id="footer_text" placeholder="ex: Obrigado por comprar conosco!" oninput="renderPreview()" /></div>`;
+          } else if (block === "BUTTONS_QR") {
+            div.innerHTML = `<div class="block-header"><span class="block-icon">BTN</span><span class="block-label">Botões Quick Reply</span></div>
+        <div class="btn-group">
+          <div><span class="btn-type-badge badge-QR">QUICK REPLY 1 *</span><input id="qr1" placeholder="ex: Confirmar" oninput="renderPreview()" /></div>
+          <div><span class="btn-type-badge badge-QR">QUICK REPLY 2 *</span><input id="qr2" placeholder="ex: Cancelar" oninput="renderPreview()" /></div>
+          <div><span class="btn-type-badge badge-QR">QUICK REPLY 3 (opcional)</span><input id="qr3" placeholder="ex: Falar com atendente" oninput="renderPreview()" /></div>
+        </div>`;
+          } else if (block === "BUTTONS_URL") {
+            div.innerHTML = `<div class="block-header"><span class="block-icon">BTN</span><span class="block-label">Botão URL</span></div>
+        <div class="btn-row">
+          <div><span class="btn-type-badge badge-URL">TEXTO DO BOTÃO *</span><input id="url_text" placeholder="ex: Acessar Portal" oninput="renderPreview()" /></div>
+          <div><span class="btn-type-badge badge-URL">URL *</span><input id="url_url" placeholder="https://meusite.com/{{1}}" oninput="renderPreview()" /></div>
+        </div>`;
+          } else if (block === "BUTTONS_MIXED") {
+            div.innerHTML = `<div class="block-header"><span class="block-icon">BTN</span><span class="block-label">Botões URL + Quick Reply</span></div>
+        <div class="btn-group">
+          <div class="btn-row">
+            <div><span class="btn-type-badge badge-URL">TEXTO BOTÃO URL *</span><input id="mixed_url_text" placeholder="ex: Comprar Agora" oninput="renderPreview()" /></div>
+            <div><span class="btn-type-badge badge-URL">URL *</span><input id="mixed_url_url" placeholder="https://loja.com/promo" oninput="renderPreview()" /></div>
+          </div>
+          <div><span class="btn-type-badge badge-QR">QUICK REPLY *</span><input id="mixed_qr" placeholder="ex: Não tenho interesse" oninput="renderPreview()" /></div>
+        </div>`;
+          }
+          c.appendChild(div);
+        });
+      }
+
+      function insertVar(el, v) {
+        const inp = el.closest(".block").querySelector("input,textarea");
+        if (!inp) return;
+        const p = inp.selectionStart,
+          val = inp.value;
+        inp.value = val.slice(0, p) + v + val.slice(p);
+        inp.focus();
+        inp.selectionStart = inp.selectionEnd = p + v.length;
+        renderPreview();
+      }
+
+      function g(id) {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : "";
+      }
+      function esc(s) {
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function renderPreview() {
+        if (!selected) return;
+        const blocks = selected.blocks;
+        let html = `<div class="wa-bubble">`;
+        if (blocks.includes("HEADER_IMAGE"))
+          html += `<div class="wa-img-placeholder">🖼️</div>`;
+        if (blocks.includes("HEADER_TEXT"))
+          html += `<div class="wa-header-txt">${esc(g("header_text") || "Cabeçalho aqui")}</div>`;
+        if (blocks.includes("BODY"))
+          html += `<div class="wa-body">${esc(g("body_text") || "Texto do corpo da mensagem…").replace(/\n/g, "<br>")}</div>`;
+        if (blocks.includes("FOOTER"))
+          html += `<div class="wa-footer">${esc(g("footer_text") || "Rodapé")}</div>`;
+        html += `<div class="wa-time">12:34 ✓✓</div>`;
+        if (blocks.includes("BUTTONS_QR")) {
+          const btns = [
+            g("qr1") || "Botão 1",
+            g("qr2") || "Botão 2",
+            g("qr3"),
+          ].filter(Boolean);
+          html +=
+            `<div class="wa-divider"></div><div class="wa-buttons">` +
+            btns.map((b) => `<div class="wa-btn">↩ ${esc(b)}</div>`).join("") +
+            `</div>`;
+        }
+        if (blocks.includes("BUTTONS_URL"))
+          html += `<div class="wa-divider"></div><div class="wa-buttons"><div class="wa-btn">🔗 ${esc(g("url_text") || "Acessar")}</div></div>`;
+        if (blocks.includes("BUTTONS_MIXED"))
+          html += `<div class="wa-divider"></div><div class="wa-buttons"><div class="wa-btn">🔗 ${esc(g("mixed_url_text") || "Ver mais")}</div><div class="wa-btn">↩ ${esc(g("mixed_qr") || "Quick reply")}</div></div>`;
+        html += `</div>`;
+        document.getElementById("wa-preview").innerHTML = html;
+      }
+
+      function buildPayload() {
+        const blocks = selected.blocks,
+          components = [];
+        if (blocks.includes("HEADER_TEXT"))
+          components.push({
+            type: "HEADER",
+            format: "TEXT",
+            text: g("header_text"),
+          });
+        if (blocks.includes("HEADER_IMAGE"))
+          components.push({ type: "HEADER", format: "IMAGE" });
+        if (blocks.includes("BODY"))
+          components.push({ type: "BODY", text: g("body_text") });
+        if (blocks.includes("FOOTER"))
+          components.push({ type: "FOOTER", text: g("footer_text") });
+        if (blocks.includes("BUTTONS_QR")) {
+          const buttons = [g("qr1"), g("qr2"), g("qr3")]
+            .filter(Boolean)
+            .map((text) => ({ type: "QUICK_REPLY", text }));
+          components.push({ type: "BUTTONS", buttons });
+        }
+        if (blocks.includes("BUTTONS_URL"))
+          components.push({
+            type: "BUTTONS",
+            buttons: [{ type: "URL", text: g("url_text"), url: g("url_url") }],
+          });
+        if (blocks.includes("BUTTONS_MIXED"))
+          components.push({
+            type: "BUTTONS",
+            buttons: [
+              {
+                type: "URL",
+                text: g("mixed_url_text"),
+                url: g("mixed_url_url"),
+              },
+              { type: "QUICK_REPLY", text: g("mixed_qr") },
+            ],
+          });
+        return {
+          name: g("name"),
+          language: g("language"),
+          category: selected.category,
+          components,
+        };
+      }
+
+      function validate(p) {
+        if (!p.name) return "Nome do template é obrigatório.";
+        if (!/^[a-z0-9_]+$/.test(p.name))
+          return "Nome deve usar apenas letras minúsculas, números e _.";
+        if (!selected) return "Selecione uma estrutura.";
+        const body = p.components.find((c) => c.type === "BODY");
+        if (!body || !body.text) return "O texto do BODY é obrigatório.";
+        const hdr = p.components.find(
+          (c) => c.type === "HEADER" && c.format === "TEXT",
+        );
+        if (hdr && !hdr.text) return "Texto do HEADER está vazio.";
+        if (selected.blocks.includes("BUTTONS_QR") && !g("qr1"))
+          return "Pelo menos 1 botão Quick Reply é obrigatório.";
+        if (
+          selected.blocks.includes("BUTTONS_URL") &&
+          (!g("url_text") || !g("url_url"))
+        )
+          return "Texto e URL do botão são obrigatórios.";
+        if (
+          selected.blocks.includes("BUTTONS_MIXED") &&
+          (!g("mixed_url_text") || !g("mixed_url_url") || !g("mixed_qr"))
+        )
+          return "Todos os campos de botão são obrigatórios.";
+        return null;
+      }
+
+      async function createTemplate() {
+        const payload = buildPayload(),
+          err = validate(payload);
+        const msgDiv = document.getElementById("msg");
+        if (err) {
+          msgDiv.className = "msg error show";
+          msgDiv.innerText = "❌ " + err;
+          return;
+        }
+        const btn = document.getElementById("submit-btn");
+        btn.disabled = true;
+        btn.innerHTML = "<span>Criando…</span>";
+        try {
+          const res = await fetch(API_BASE, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Erro ao criar template");
+          msgDiv.className = "msg success show";
+          msgDiv.innerText = "✅ Template criado com sucesso!";
+          loadTemplates();
+        } catch (e) {
+          msgDiv.className = "msg error show";
+          msgDiv.innerText = "❌ " + e.message;
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = "<span>Criar Template</span>";
+        }
+      }
+
+      function escH(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function examplePills(comp) {
+        if (comp.example && comp.example.header_text) {
+          const pills = comp.example.header_text
+            .map((v) => `<span class="ex-pill">${escH(v)}</span>`)
+            .join("");
+          return `<div class="ex-row"><span class="ex-label">exemplo</span>${pills}</div>`;
+        }
+        if (
+          comp.example &&
+          comp.example.body_text &&
+          comp.example.body_text[0]
+        ) {
+          const pills = comp.example.body_text[0]
+            .map(
+              (v, i) =>
+                `<span class="ex-pill"><span class="ex-var">{{${i + 1}}}</span> ${escH(v)}</span>`,
+            )
+            .join("");
+          return `<div class="ex-row"><span class="ex-label">exemplo</span>${pills}</div>`;
+        }
+        return "";
+      }
+
+      function renderComponentBlock(comp) {
+        if (comp.type === "BUTTONS" && comp.buttons) {
+          const btnsHtml = comp.buttons
+            .map((b) => {
+              const cls = b.type === "URL" ? "badge-URL" : "badge-QR";
+              const urlLine = b.url
+                ? `<div class="detail-btn-url">&#128279; ${escH(b.url)}</div>`
+                : "";
+              return `<div class="detail-btn-row"><span class="detail-btn-type ${cls}">${b.type}</span><span class="detail-btn-text">${escH(b.text || "")}</span>${urlLine}</div>`;
+            })
+            .join("");
+          return `<div class="detail-block"><div class="detail-block-head"><span class="detail-block-type">BUTTONS</span></div><div class="detail-buttons">${btnsHtml}</div></div>`;
+        }
+        if (comp.type === "HEADER" && comp.format === "IMAGE") {
+          return `<div class="detail-block"><div class="detail-block-head"><span class="detail-block-type">HEADER</span><span class="detail-block-fmt">IMAGE</span></div><div class="detail-block-content" style="color:var(--muted);font-style:italic">&#128248; Imagem enviada dinamicamente no disparo</div></div>`;
+        }
+        const fmtBadge = comp.format
+          ? `<span class="detail-block-fmt">${comp.format}</span>`
+          : "";
+        const txt = comp.text
+          ? escH(comp.text)
+          : '<span style="color:var(--muted);font-style:italic">vazio</span>';
+        const ex = examplePills(comp);
+        return `<div class="detail-block"><div class="detail-block-head"><span class="detail-block-type">${comp.type}</span>${fmtBadge}</div><div class="detail-block-content">${txt}</div>${ex}</div>`;
+      }
+
+      async function loadTemplates() {
+        const list = document.getElementById("tpl-list");
+        list.innerHTML = `<div class="tpl-list-loading">Carregando…</div>`;
+        try {
+          const res = await fetch(`${API_BASE}/${WABA_ID}`),
+            data = await res.json();
+          list.innerHTML = "";
+          if (!data.templates || !data.templates.length) {
+            list.innerHTML = `<div class="tpl-list-loading">Nenhum template encontrado.</div>`;
+            return;
+          }
+          data.templates.forEach((t) => {
+            const st = t.status || "PENDING";
+            const item = document.createElement("div");
+            item.className = "tpl-item";
+            const blocksHtml = (t.components || [])
+              .map(renderComponentBlock)
+              .join("");
+            const compSummary = (t.components || [])
+              .map((c) => c.type)
+              .join(" · ");
+
+            const tplId = t.id || "";
+            const tplName = t.name || "";
+
+            item.innerHTML = `
+        <div class="tpl-header" onclick="this.closest('.tpl-item').classList.toggle('open')">
+          <div class="status-dot dot-${st}"></div>
+          <div class="tpl-name">${escH(tplName)}</div>
+          <span class="cat-badge cat-${t.category}">${t.category}</span>
+          <span class="status-label sl-${st}">${st}</span>
+          <span class="tpl-chevron">▼</span>
+        </div>
+        <div class="tpl-body">
+          <div class="tpl-meta">
+            <span style="color:var(--muted)">ID:</span><span style="font-family:var(--mono)">${escH(tplId) || "—"}</span>
+            &nbsp;·&nbsp;
+            <span style="color:var(--muted)">Idioma:</span><span>${t.language || "—"}</span>
+            &nbsp;·&nbsp;
+            <span style="color:var(--muted)">Blocos:</span><span style="font-family:var(--mono)">${compSummary || "—"}</span>
+          </div>
+          ${blocksHtml}
+          <button
+            class="delete-btn"
+            onclick="openConfirm('${escH(tplId)}', '${escH(tplName)}')"
+            title="Excluir template"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+            Excluir template
+          </button>
+        </div>`;
+            list.appendChild(item);
+          });
+        } catch {
+          list.innerHTML = `<div class="tpl-list-loading" style="color:var(--danger)">Erro ao carregar.</div>`;
+        }
+      }
+
+      renderPresets();
+      loadTemplates();
+    </script>
+  </body>
+</html>

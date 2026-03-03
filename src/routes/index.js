@@ -14,6 +14,7 @@ import inboxes from "./inbox.route.js";
 import followUp from "./followUp.route.js";
 import offers from "./offers.route.js";
 import pipeline from "./pipeline.route.js";
+import wap_oficial from "./wap-oficial.route.js";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/inboxes", inboxes);
 router.use("/fup", followUp);
 router.use("/offers", offers);
 router.use("/pipeline", pipeline);
+router.use("/wap-official", wap_oficial);
 
 export default router;
