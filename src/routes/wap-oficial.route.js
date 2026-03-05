@@ -20,6 +20,6 @@ router.put("/credencial/:id", wap_oficialController.updateCredentialById);
 router.delete("/credencial/:id", wap_oficialController.deleteCredentialById);
 
 //WEBHOOK -> RECEBIMENTO DE MENSAGENS
-router.get("/webhook/wap-ofc/:id", wap_oficialController.verifyTokenByMeta);
+router.get("/webhook/:id", wap_oficialController.verifyTokenByMeta);
 
 export default router;

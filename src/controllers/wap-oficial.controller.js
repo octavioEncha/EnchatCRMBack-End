@@ -82,7 +82,7 @@ export const verifyTokenByMeta = async (req, res) => {
     const mode = req.query["hub.mode"];
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
-
+    console.log("FACEBOOK ME CHAMOU, CHALLENGE: ", challenge);
     return res.status(200).send(challenge);
   } catch (error) {
     res.status(400).json({ error: error.message });
