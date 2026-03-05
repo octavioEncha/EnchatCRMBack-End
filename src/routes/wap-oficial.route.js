@@ -22,4 +22,6 @@ router.delete("/credencial/:id", wap_oficialController.deleteCredentialById);
 //WEBHOOK -> RECEBIMENTO DE MENSAGENS
 router.get("/webhook/:id", wap_oficialController.verifyTokenByMeta);
 
+router.post("/webhook/:id", wap_oficialController.receiveMessages);
+
 export default router;

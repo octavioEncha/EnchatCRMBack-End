@@ -118,3 +118,8 @@ export const deleteCredentialById = async ({ id }) => {
 
   return await wapModel.deleteCredentialById({ id: credential.id });
 };
+
+export const receiveMessages = async ({ inboxId, data }) => {
+  console.log(inboxId);
+  console.log(data);
+};
