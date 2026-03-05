@@ -10,6 +10,7 @@ export default class Inbox {
     offers,
     name,
     prompt,
+    meta_verify,
     pipeline_id,
     pipeline,
     created_at,
@@ -31,6 +32,8 @@ export default class Inbox {
     this.number = number || null;
     this.name = name || "Inbox Principal";
     this.prompt = prompt;
+    this.meta_verify =
+      meta_verify === undefined || meta_verify === null ? null : meta_verify;
     this.pipeline_id = pipeline_id;
 
     this.offers = Array.isArray(offers)
@@ -80,7 +83,11 @@ export default class Inbox {
       throw new Error("Inbox must have pipeline_id");
     }
 
-    const allowedProviders = ["whatsapp", "telegram", "instagram"];
+    const allowedProviders = [
+      "whatsapp_official",
+      "whatsapp_n_official",
+      "instagram",
+    ];
 
     if (!allowedProviders.includes(this.provider)) {
       throw new Error(`Invalid provider: ${this.provider}`);
@@ -106,8 +113,10 @@ export default class Inbox {
       id: this.id,
       user_id: this.user_id,
       provider: this.provider,
+      webhook_url: this.webhook_url,
       name: this.name,
       prompt: this.prompt,
+      meta_verify: this.meta_verify,
       number: this.number,
       is_active: this.is_active,
       pipeline: this.pipeline,

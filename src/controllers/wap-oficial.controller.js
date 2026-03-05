@@ -78,26 +78,30 @@ export const deleteCredentialById = async (req, res) => {
 };
 
 export const verifyTokenByMeta = async (req, res) => {
+  const inboxId = req.params.id;
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+  res.status(200).send(challenge);
   try {
-    const inboxId = req.params.id;
-    const mode = req.query["hub.mode"];
-    const token = req.query["hub.verify_token"];
-    const challenge = req.query["hub.challenge"];
-    console.log("INBOX ID: ", inboxId);
-    console.log("CHALLENGE NUMBER: ", challenge);
-    return res.status(200).send(challenge);
+    return await wap_oficial_service.setVerification({ inboxId });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
 export const receiveMessages = async (req, res) => {
+  res.status(200).json({ message: "Success!" });
   try {
     const inboxId = req.params.id;
     const body = req.body;
-    await wap_oficial_service.receiveMessages({ inboxId, data: body });
-    return res.status(200).message({ message: "Success!" });
+
+    await wap_oficial_service.receiveMessages({
+      inboxId,
+      data: body,
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    return res.status(400).json({ error: error.message });
   }
 };

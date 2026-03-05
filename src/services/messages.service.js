@@ -47,6 +47,16 @@ export const specificMessaByLeadId = async ({ lead_id }) => {
   return getMessagesByConversationId;
 };
 
+export const verifyMessageById = async ({ messageId }) => {
+  const message = await messageModel.getMessageById({ messageId });
+
+  if (message) {
+    return message;
+  }
+
+  return null;
+};
+
 /**
  * Cria nova mensagem a partir do recebimento via WhatsApp
  * Pode ser enviada pelo usuário (fromMe = true) ou pelo lead (fromMe = false)
@@ -56,12 +66,11 @@ export const createNewMessage = async ({ data, instance }) => {
     const messageId = data?.key?.id;
     if (!messageId) return null;
 
-    const verifyMessageById = await messageModel.getMessageById({ messageId });
+    const verifyMessage = await verifyMessageById({ messageId });
 
-    if (verifyMessageById) {
+    if (verifyMessage) {
       return null;
     }
-
     const messageContent =
       data?.message?.conversation ||
       data?.message?.extendedTextMessage?.text ||
@@ -207,7 +216,7 @@ export const createNewMessage = async ({ data, instance }) => {
             number: lead.phone,
             text: aiResponse.output,
           }),
-        },
+        }
       );
 
       // ==============================
@@ -291,7 +300,7 @@ export const createMessageForShootingToLead = async ({
 
     console.log(
       "✅ Mensagem criada via Disparo do CRM:",
-      createMessageForShootingToLead.content,
+      createMessageForShootingToLead.content
     );
     return { lead, conversation, message: createMessageForShootingToLead };
   } catch (err) {
@@ -360,7 +369,7 @@ export const createNewMessageSendCRM = async ({
           number: lead.phone,
           text: content,
         }),
-      },
+      }
     );
 
     if (!response.ok) {
@@ -423,7 +432,7 @@ export const sendMessage = async ({ data }) => {
         number: searchLead.phone,
         text: data.content,
       }),
-    },
+    }
   );
 
   const dataResponse = await response.json();

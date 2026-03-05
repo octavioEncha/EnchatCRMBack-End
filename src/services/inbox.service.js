@@ -41,7 +41,7 @@ export const createInbox = async ({ data }) => {
 
   const inbox = new Inbox({
     user_id: data.user_id,
-    provider: "whatsapp",
+    provider: data.provider,
     api_key: null,
     webhook_url: null,
     is_active: true,
@@ -59,9 +59,16 @@ export const createInbox = async ({ data }) => {
       inboxModel.createRelationOfferInbox({
         inbox_id: newInbox.id,
         offer_id: offer.id,
-      }),
-    ),
+      })
+    )
   );
+
+  if (inbox.provider === "whatsapp_official") {
+    newInbox.webhook_url =
+      "https://api.enchat.in/wap-official/webhook/" + newInbox.id;
+
+    await inboxModel.updateInboxById({ id: newInbox.id, data: newInbox });
+  }
 
   return true;
 };
@@ -114,8 +121,8 @@ export const updateInboxById = async ({ id, data }) => {
         inboxModel.createRelationOfferInbox({
           inbox_id: id,
           offer_id: offer.id,
-        }),
-      ),
+        })
+      )
     );
   }
 
@@ -125,4 +132,8 @@ export const updateInboxById = async ({ id, data }) => {
 export const deleteInboxById = async ({ id }) => {
   await findInboxByIdOrThrow({ id });
   return await inboxModel.deleteInboxById({ id });
+};
+
+export const setVerificationInInboxByMeta = async ({ inboxId }) => {
+  return await inboxModel.setVerificationInInboxByMeta({ inboxId });
 };

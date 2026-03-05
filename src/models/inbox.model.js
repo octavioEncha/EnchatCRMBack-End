@@ -106,7 +106,7 @@ export const listAllInboxesByUserId = async ({ id }) => {
           downsell:downsell_product_id ( name )
         )
       )
-    `,
+    `
     )
     .eq("user_id", id);
 
@@ -154,4 +154,16 @@ export const deleteInboxById = async ({ id }) => {
   if (error) throw error;
 
   return data;
+};
+
+export const setVerificationInInboxByMeta = async ({ inboxId }) => {
+  const { error } = await supabase
+    .from("integration_channels")
+    .update({
+      meta_verify: true,
+    })
+    .eq("id", inboxId);
+
+  if (error) throw error;
+  return true;
 };

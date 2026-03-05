@@ -20,7 +20,7 @@ export const getMessageById = async ({ messageId }) => {
     .maybeSingle();
 
   if (error) throw error;
-  console.log("message: ", message);
+
   return message;
 };
 

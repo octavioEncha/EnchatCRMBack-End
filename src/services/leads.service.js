@@ -68,9 +68,59 @@ export const searchLeadId = async ({ id }) => {
 
   return searchLeadId;
 };
+/* =====================================================
+   CREATE NEW LEAD BY API OFICIAL (WHATSAPP)
+   ===================================================== */
+
+export const createNewLeadByAPIOficial = async ({ phone, name, instance }) => {
+  const searchInbox = await findInboxByIdOrThrow({ id: instance });
+
+  if (!searchInbox) {
+    throw new Error("❌ Erro ao buscar canal");
+  }
+
+  const normalizedPhone = normalizePhone(phone);
+
+  if (!normalizedPhone) {
+    throw new Error("Telefone inválido");
+  }
+
+  const existingLead = await leadModel.searchLeadPhone({
+    phone: normalizedPhone,
+    instance: searchInbox.user_id,
+  });
+
+  if (existingLead) {
+    return existingLead;
+  }
+
+  const searchPipeline = await seachPipelineById({
+    id: searchInbox.pipeline_id,
+  });
+
+  const leadData = {
+    user_id: searchInbox.user_id,
+    name: name || normalizedPhone,
+    avatar:
+      "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
+    email: "",
+    phone: normalizedPhone,
+    source: "crm",
+    lid: normalizePhone,
+    pipeline_id: searchPipeline.id,
+  };
+
+  const newLead = await leadModel.createLead({ data: leadData });
+
+  if (!newLead) {
+    throw new Error("Erro ao criar novo lead.");
+  }
+
+  return newLead;
+};
 
 /* =====================================================
-   CREATE NEW LEAD
+   CREATE NEW LEAD WITH PHOTO
    ===================================================== */
 export const createNewLead = async ({ data, phone, instance, lid }) => {
   const searchInbox = await findInboxByIdOrThrow({ id: instance });
@@ -108,7 +158,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
         apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
       },
       body: JSON.stringify({ number: normalizedPhone }),
-    },
+    }
   );
 
   const profile = await response.json();
@@ -208,7 +258,7 @@ export const importLead = async ({ file, pipelineId }) => {
             apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
           },
           body: JSON.stringify({ number: phone }),
-        },
+        }
       );
 
       profile = await response.json();

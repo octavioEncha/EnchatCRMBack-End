@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Enchat CRM - Socket Debug</title>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #0f172a;
+        color: #e5e7eb;
+        padding: 20px;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      .box {
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+
+      input,
+      button {
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+      }
+
+      input {
+        width: 260px;
+      }
+
+      button {
+        cursor: pointer;
+        background: #2563eb;
+        color: white;
+        font-weight: bold;
+      }
+
+      #log {
+        background: black;
+        height: 400px;
+        overflow-y: auto;
+        font-family: monospace;
+        padding: 10px;
+        white-space: pre-wrap;
+        border-radius: 6px;
+      }
+
+      .incoming {
+        color: #22c55e;
+      }
+      .outgoing {
+        color: #38bdf8;
+      }
+      .ia {
+        color: #facc15;
+      }
+      .system {
+        color: #94a3b8;
+      }
+      .error {
+        color: #f87171;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>🧪 Enchat CRM - WebSocket Debug</h2>
+
+    <div class="box">
+      <input
+        type="text"
+        id="instance"
+        placeholder="Digite o inboxId / instância"
+      />
+      <button onclick="connect()">Conectar</button>
+      <button onclick="disconnect()">Desconectar</button>
+    </div>
+
+    <div class="box">
+      <strong>Status:</strong>
+      <span id="status">Desconectado</span>
+    </div>
+
+    <div class="box">
+      <h3>Mensagens</h3>
+      <div id="log"></div>
+    </div>
+
+    <script>
+      let socket = null;
+
+      function log(msg, type = "system") {
+        const el = document.createElement("div");
+        el.className = type;
+        el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+
+        const logBox = document.getElementById("log");
+        logBox.appendChild(el);
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      function setStatus(text) {
+        document.getElementById("status").textContent = text;
+      }
+
+      function disconnect() {
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+
+          setStatus("Desconectado");
+          log("Conexão encerrada manualmente", "system");
+        }
+      }
+
+      function connect() {
+        const instance = document.getElementById("instance").value.trim();
+
+        if (!instance) {
+          alert("Digite a instância (inboxId)");
+          return;
+        }
+
+        // Fecha conexão anterior
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+        }
+
+        log("Conectando...", "system");
+        setStatus("Conectando...");
+
+        socket = io("http://localhost:4000", {
+          transports: ["websocket"],
+          reconnection: true,
+        });
+
+        socket.on("connect", () => {
+          setStatus("Conectado");
+
+          log("✅ Conectado | Socket ID: " + socket.id, "system");
+
+          // Entra na instância (MESMO DO REACT)
+          socket.emit("register_session", instance);
+
+          log("📡 Entrando na instância: " + instance, "system");
+        });
+
+        socket.on("disconnect", () => {
+          setStatus("Desconectado");
+          log("❌ Desconectado do servidor", "system");
+        });
+
+        socket.on("connect_error", (err) => {
+          log("❌ Erro: " + err.message, "error");
+          setStatus("Erro");
+        });
+
+        // Eventos do backend
+        socket.on("incoming_message", (data) => {
+          log("📩 INCOMING:\n" + JSON.stringify(data, null, 2), "incoming");
+        });
+
+        socket.on("outgoing_message", (data) => {
+          log("📤 OUTGOING:\n" + JSON.stringify(data, null, 2), "outgoing");
+        });
+
+        socket.on("IA", (data) => {
+          log("🤖 IA:\n" + JSON.stringify(data, null, 2), "ia");
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,4 +1,17 @@
 import * as wapModel from "../models/wap-oficial.model.js";
+import { searchLead, createNewLeadByAPIOficial } from "./leads.service.js";
+import {
+  searchConversation,
+  createNewConversation,
+} from "./conversation.service.js";
+import {
+  createMessage,
+  updateLastMessageTimestamp,
+} from "../models/message.model.js";
+import { sendMessageToClientConnected } from "./websocket.service.js";
+import { setVerificationInInboxByMeta } from "./inbox.service.js";
+
+import { verifyMessageById } from "./messages.service.js";
 
 import Credential from "../entities/credencial-wap.entity.js";
 
@@ -6,6 +19,8 @@ const token =
   "Bearer EAAW6RYtQT9kBQ5Gr16xyQhlZBFmhbcNlsRIl7ZCXUh1R3QnYo6FvzzXM7dFgP3cb39oFRZABUJUFVcLZAQs87ajbMrCjhoAcZB8DGe3cmQy6KL6Jh50SyFUo3fHVKCowrCAzeSZBZAhT7Mwqns80y3tyf3UWXEkrRebhh8T5FwaIW0ZBLZCywoJHhTExcUlYPaZAvegwZDZD";
 
 const waba_id = "26801374196130743";
+
+//TEMPLATE
 
 export const getAllTemplatesByUserId = async ({ id }) => {
   const credentials = await getCredentialByUserId({ userId: id });
@@ -71,6 +86,8 @@ export const deleteTemplateById = async (templateId, name) => {
   return result;
 };
 
+//CREDENTIAL
+
 export const getCredencialById = async ({ id }) => {
   const credencial = await wapModel.getCredencialById({ id });
 
@@ -119,7 +136,81 @@ export const deleteCredentialById = async ({ id }) => {
   return await wapModel.deleteCredentialById({ id: credential.id });
 };
 
+//WEBHOOK
+
+export const setVerification = async ({ inboxId }) => {
+  await setVerificationInInboxByMeta({ inboxId });
+};
+
 export const receiveMessages = async ({ inboxId, data }) => {
-  console.log(inboxId);
-  console.log(data);
+  const messageType = data[0].messages[0].type;
+  const messageId = data[0].messages[0].id;
+  const senderName = data[0].contacts[0].profile.name;
+  const senderPhone = data[0].contacts[0].wa_id;
+
+  //const verifyMessage = await verifyMessageById({ messageId });
+
+  //if (verifyMessage) {
+  //  return null;
+  //}
+
+  let lead = "";
+
+  lead = await searchLead({
+    phone: senderPhone,
+    instance: inboxId,
+  });
+
+  if (!lead) {
+    lead = await createNewLeadByAPIOficial({
+      phone: senderPhone,
+      name: senderName,
+      instance: inboxId,
+    });
+  }
+
+  let conversation = await searchConversation({ lead_id: lead.id });
+
+  if (!conversation) {
+    const conversationData = {
+      inbox_id: inboxId,
+      lead_id: lead.id,
+    };
+    conversation = createNewConversation({ data: conversationData });
+  }
+
+  if (messageType === "text") {
+    const message = data[0].messages[0].text.body;
+
+    const createdMessage = await createMessage({
+      data: {
+        conversation_id: conversation.id,
+        lead_id: lead.id,
+        inbox: inboxId,
+        senderType: "lead",
+        mediaType: "text",
+        messageContent: message,
+        messageId,
+      },
+    });
+    if (!createdMessage) throw new Error("Erro ao salvar mensagem");
+    await updateLastMessageTimestamp({
+      conversationId: conversation.id,
+    });
+
+    const finalMessage = {
+      id: createdMessage.id,
+      conversation_id: conversation.id,
+      lead_id: lead.id,
+      direction: "incoming",
+      text: message,
+      timestamp: new Date(),
+      contact: lead.phone,
+      user: lead.name,
+      avatar: lead.avatar,
+      ai_enabled: conversation.ai_enabled,
+    };
+
+    await sendMessageToClientConnected({ instance: inboxId, finalMessage });
+  }
 };
