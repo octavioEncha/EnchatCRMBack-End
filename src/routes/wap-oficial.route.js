@@ -1,15 +1,25 @@
 import { Router } from "express";
-import * as wap_oficial from "../controllers/wap-oficial.controller.js";
+import * as wap_oficialController from "../controllers/wap-oficial.controller.js";
 
 const router = Router();
 
-//router.post("/shooting", shootingController.shootingToLead);
+//TEMPLATE -> Templates para envios de mensagens para os leads (+24 horas/disparo)
+router.get("/template/:id", wap_oficialController.getAllTemplatesByUserId);
 
-router.get("/template/:id", wap_oficial.getAllTemplatesByWapId);
+router.post("/template", wap_oficialController.createNewTemplate);
 
-router.post("/template", wap_oficial.createNewTemplate);
+router.delete("/template/:id", wap_oficialController.deleteTemplateById);
 
-router.delete("/template/:id", wap_oficial.deleteTemplateById);
+//CREDENCIAIS -> Facebook (token e waba_id)
+router.get("/credencial/:id", wap_oficialController.getCredentialByUserId);
 
-//DELETE /template/1407680676729941?name=order_confirmation
+router.post("/credencial", wap_oficialController.setCredencial);
+
+router.put("/credencial/:id", wap_oficialController.updateCredentialById);
+
+router.delete("/credencial/:id", wap_oficialController.deleteCredentialById);
+
+//WEBHOOK -> RECEBIMENTO DE MENSAGENS
+router.get("/webhook/wap-ofc/:id", wap_oficialController.verifyTokenByMeta);
+
 export default router;

@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -640,8 +640,6 @@
         color: var(--accent);
         font-weight: 700;
       }
-
-      /* ── Delete button ── */
       .delete-btn {
         display: flex;
         align-items: center;
@@ -671,8 +669,6 @@
       .delete-btn svg {
         flex-shrink: 0;
       }
-
-      /* ── Confirm overlay ── */
       .confirm-overlay {
         position: fixed;
         inset: 0;
@@ -772,10 +768,373 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+
+      /* ── Tabs ── */
+      .page-tabs {
+        grid-column: 1/-1;
+        display: flex;
+        gap: 4px;
+        margin-bottom: -8px;
+      }
+      .tab-btn {
+        padding: 10px 20px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-bottom: none;
+        border-radius: 10px 10px 0 0;
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .tab-btn:hover {
+        color: var(--text);
+        background: var(--surface);
+      }
+      .tab-btn.active {
+        background: var(--surface);
+        color: var(--accent);
+        border-color: var(--border);
+        border-bottom-color: var(--surface);
+      }
+      .tab-panel {
+        display: none;
+        grid-column: 1/-1;
+      }
+      .tab-panel.active {
+        display: contents;
+      }
+
+      /* ── Credentials section ── */
+      .cred-section {
+        grid-column: 1/-1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .cred-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      @media (max-width: 800px) {
+        .cred-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .cred-form-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .cred-form-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .cred-form-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+      .cred-form-icon.create {
+        background: #0d2018;
+        border: 1px solid #1a3325;
+      }
+      .cred-form-icon.edit {
+        background: #001a3a;
+        border: 1px solid #0a2545;
+      }
+      .cred-form-name {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .cred-form-sub {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--mono);
+        margin-top: 1px;
+      }
+
+      .token-field-wrap {
+        position: relative;
+      }
+      .token-field-wrap input {
+        padding-right: 44px;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .token-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1;
+        transition: color 0.15s;
+      }
+      .token-toggle:hover {
+        color: var(--text);
+      }
+
+      .cred-btn {
+        padding: 11px 16px;
+        border-radius: 9px;
+        font-family: var(--sans);
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.18s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: none;
+      }
+      .cred-btn.primary {
+        background: var(--accent);
+        color: #000;
+      }
+      .cred-btn.primary:hover {
+        background: #20c058;
+        transform: translateY(-1px);
+      }
+      .cred-btn.secondary {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+      .cred-btn.secondary:hover {
+        border-color: #3a4555;
+        background: #252d38;
+      }
+      .cred-btn.danger-outline {
+        background: transparent;
+        border: 1px solid #4a1010;
+        color: var(--danger);
+      }
+      .cred-btn.danger-outline:hover {
+        background: #2a0808;
+        border-color: var(--danger);
+      }
+      .cred-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+      .cred-btn.info {
+        background: #001a3a;
+        border: 1px solid #0a2545;
+        color: #4da6ff;
+      }
+      .cred-btn.info:hover {
+        background: #002050;
+      }
+
+      .cred-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        transition: border-color 0.15s;
+      }
+      .cred-card:hover {
+        border-color: #3a4555;
+      }
+      .cred-card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        background: #12161c;
+      }
+      .cred-card-id {
+        font-family: var(--mono);
+        font-size: 11px;
+        background: var(--border);
+        color: var(--accent);
+        padding: 2px 8px;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+      .cred-card-waba {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .cred-card-date {
+        font-size: 11px;
+        color: var(--muted);
+        font-family: var(--mono);
+        flex-shrink: 0;
+      }
+      .cred-card-body {
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .cred-token-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cred-token-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+      .cred-token-val {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #8696a0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 5px 10px;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .cred-token-val:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+      .cred-token-val.revealed {
+        white-space: normal;
+        word-break: break-all;
+        color: #7fe89a;
+      }
+      .cred-user-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cred-user-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+        flex-shrink: 0;
+      }
+      .cred-user-val {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .cred-actions {
+        display: flex;
+        gap: 8px;
+        padding-top: 4px;
+      }
+
+      .cred-list-area {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .cred-list-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      .cred-list-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 60px;
+      }
+      .cred-empty {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 24px;
+        font-family: var(--mono);
+      }
+
+      .cred-msg {
+        padding: 9px 13px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        display: none;
+      }
+      .cred-msg.show {
+        display: block;
+      }
+      .cred-msg.success {
+        background: #0d2018;
+        color: var(--accent);
+        border: 1px solid #1a3325;
+      }
+      .cred-msg.error {
+        background: #2a0808;
+        color: var(--danger);
+        border: 1px solid #4a1010;
+      }
+      .cred-msg.info {
+        background: #001a3a;
+        color: #4da6ff;
+        border: 1px solid #0a2545;
+      }
+
+      .edit-mode-banner {
+        background: #001a3a;
+        border: 1px solid #0a2545;
+        border-radius: 8px;
+        padding: 10px 14px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #4da6ff;
+      }
+      .edit-mode-banner.show {
+        display: flex;
+      }
+      .edit-mode-banner strong {
+        font-family: var(--mono);
+      }
     </style>
   </head>
   <body>
-    <!-- Confirm delete overlay -->
+    <!-- Confirm delete overlay (templates) -->
     <div class="confirm-overlay" id="confirm-overlay">
       <div class="confirm-box">
         <div class="confirm-icon">🗑️</div>
@@ -800,6 +1159,30 @@
       </div>
     </div>
 
+    <!-- Confirm delete overlay (credentials) -->
+    <div class="confirm-overlay" id="cred-confirm-overlay">
+      <div class="confirm-box">
+        <div class="confirm-icon">🔑</div>
+        <div class="confirm-title">Excluir credencial?</div>
+        <div class="confirm-desc">
+          Esta ação é irreversível. A credencial será removida permanentemente.
+        </div>
+        <div class="confirm-name" id="cred-confirm-label">—</div>
+        <div class="confirm-actions">
+          <button class="confirm-cancel" onclick="closeCredConfirm()">
+            Cancelar
+          </button>
+          <button
+            class="confirm-delete"
+            id="cred-confirm-delete-btn"
+            onclick="confirmCredDelete()"
+          >
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="wrapper">
       <header>
         <div class="logo">💬</div>
@@ -809,106 +1192,249 @@
         </div>
       </header>
 
-      <div class="builder">
-        <div class="card">
-          <div class="section-title">Identificação</div>
-          <div class="field">
-            <label>Nome do template</label>
-            <input id="name" placeholder="ex: promo_verao_2026" />
+      <!-- Tabs -->
+      <div class="page-tabs">
+        <button class="tab-btn active" onclick="switchTab('templates', this)">
+          📋 Templates
+        </button>
+        <button class="tab-btn" onclick="switchTab('credenciais', this)">
+          🔑 Credenciais
+        </button>
+      </div>
+
+      <!-- TAB: Templates -->
+      <div class="tab-panel active" id="tab-templates">
+        <div class="builder">
+          <div class="card">
+            <div class="section-title">Identificação</div>
+            <div class="field">
+              <label>Nome do template</label>
+              <input id="name" placeholder="ex: promo_verao_2026" />
+            </div>
+            <div class="field">
+              <label>Idioma</label>
+              <select id="language">
+                <option value="pt_BR">pt_BR — Português (Brasil)</option>
+                <option value="en_US">en_US — English (US)</option>
+                <option value="es_AR">es_AR — Español (Argentina)</option>
+              </select>
+            </div>
           </div>
-          <div class="field">
-            <label>Idioma</label>
-            <select id="language">
-              <option value="pt_BR">pt_BR — Português (Brasil)</option>
-              <option value="en_US">en_US — English (US)</option>
-              <option value="es_AR">es_AR — Español (Argentina)</option>
-            </select>
+          <div class="card">
+            <div class="section-title">Estrutura do template</div>
+            <div class="presets" id="presets-grid"></div>
+          </div>
+          <div class="card" id="fields-card" style="display: none">
+            <div class="section-title">Conteúdo dos blocos</div>
+            <div id="dynamic-fields"></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <button
+              class="submit-btn"
+              id="submit-btn"
+              disabled
+              onclick="createTemplate()"
+            >
+              <span>Criar Template</span>
+            </button>
+            <div class="msg" id="msg"></div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="section-title">Estrutura do template</div>
-          <div class="presets" id="presets-grid"></div>
-        </div>
-
-        <div class="card" id="fields-card" style="display: none">
-          <div class="section-title">Conteúdo dos blocos</div>
-          <div id="dynamic-fields"></div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 10px">
-          <button
-            class="submit-btn"
-            id="submit-btn"
-            disabled
-            onclick="createTemplate()"
-          >
-            <span>Criar Template</span>
-          </button>
-          <div class="msg" id="msg"></div>
+        <div class="right-col">
+          <div class="wa-preview-wrapper">
+            <div class="wa-header-bar">
+              <div class="wa-avatar">🤖</div>
+              <div>
+                <div class="wa-contact">Minha Empresa</div>
+                <div class="wa-status">✓ Conta comercial verificada</div>
+              </div>
+            </div>
+            <div class="wa-bubble-wrapper" id="wa-preview">
+              <div
+                style="
+                  color: #6b7280;
+                  font-size: 13px;
+                  text-align: center;
+                  padding: 20px;
+                  font-family: var(--mono);
+                "
+              >
+                ← Selecione uma estrutura para prévia
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">Templates existentes</div>
+            <div class="tpl-list" id="tpl-list">
+              <div class="tpl-list-loading">Carregando…</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="right-col">
-        <div class="wa-preview-wrapper">
-          <div class="wa-header-bar">
-            <div class="wa-avatar">🤖</div>
-            <div>
-              <div class="wa-contact">Minha Empresa</div>
-              <div class="wa-status">✓ Conta comercial verificada</div>
-            </div>
-          </div>
-          <div class="wa-bubble-wrapper" id="wa-preview">
-            <div
-              style="
-                color: #6b7280;
-                font-size: 13px;
-                text-align: center;
-                padding: 20px;
-                font-family: var(--mono);
-              "
-            >
-              ← Selecione uma estrutura para prévia
-            </div>
-          </div>
-        </div>
+      <!-- TAB: Credenciais -->
+      <div class="tab-panel" id="tab-credenciais">
+        <div class="cred-section">
+          <div class="cred-grid">
+            <!-- Form card (create / edit) -->
+            <div class="cred-form-card">
+              <div class="cred-form-title">
+                <div class="cred-form-icon create" id="cred-form-icon">🔑</div>
+                <div>
+                  <div class="cred-form-name" id="cred-form-title-text">
+                    Nova Credencial
+                  </div>
+                  <div class="cred-form-sub" id="cred-form-subtitle">
+                    Preencha os dados abaixo
+                  </div>
+                </div>
+              </div>
 
-        <div class="card">
-          <div class="section-title">Templates existentes</div>
-          <div class="tpl-list" id="tpl-list">
-            <div class="tpl-list-loading">Carregando…</div>
+              <div class="edit-mode-banner" id="edit-mode-banner">
+                ✏️ Editando credencial <strong id="edit-cred-id-label"></strong>
+                <button
+                  class="cred-btn secondary"
+                  style="margin-left: auto; padding: 5px 12px; font-size: 12px"
+                  onclick="resetCredForm()"
+                >
+                  ✕ Cancelar
+                </button>
+              </div>
+
+              <div class="field">
+                <label>User ID</label>
+                <input
+                  id="cred-user-id"
+                  placeholder="UUID do usuário"
+                  value="99435766-b93b-4741-9fcf-3d1715e7f174"
+                />
+              </div>
+              <div class="field">
+                <label>WABA ID</label>
+                <input id="cred-waba-id" placeholder="ex: 1995139188078401" />
+              </div>
+              <div class="field">
+                <label>Token de acesso</label>
+                <div class="token-field-wrap">
+                  <input
+                    id="cred-token"
+                    type="password"
+                    placeholder="EAAxxxxxxxxxxxx…"
+                  />
+                  <button
+                    class="token-toggle"
+                    onclick="toggleTokenVis('cred-token', this)"
+                    title="Mostrar/Ocultar token"
+                  >
+                    👁
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 10px">
+                <button
+                  class="cred-btn primary"
+                  id="cred-save-btn"
+                  onclick="saveCredencial()"
+                >
+                  <span id="cred-save-label">💾 Criar Credencial</span>
+                </button>
+                <button
+                  class="cred-btn secondary"
+                  onclick="resetCredForm()"
+                  id="cred-cancel-btn"
+                  style="display: none"
+                >
+                  Cancelar
+                </button>
+              </div>
+              <div class="cred-msg" id="cred-msg"></div>
+            </div>
+
+            <!-- Right: list -->
+            <div class="cred-list-area">
+              <div class="cred-list-head">
+                <div>
+                  <div class="section-title" style="margin-bottom: 2px">
+                    Credenciais salvas
+                  </div>
+                  <div
+                    style="
+                      font-size: 11px;
+                      color: var(--muted);
+                      font-family: var(--mono);
+                    "
+                    id="cred-user-badge"
+                  >
+                    user: 99435766-b93b-4741-9fcf-3d1715e7f174
+                  </div>
+                </div>
+                <button
+                  class="cred-btn secondary"
+                  style="padding: 7px 13px; font-size: 12px"
+                  onclick="loadCredenciais()"
+                >
+                  ↻ Recarregar
+                </button>
+              </div>
+              <div class="cred-list-inner" id="cred-list">
+                <div class="cred-empty">Carregando…</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <script>
-      const API_BASE = "http://localhost:4000/wap-official/template";
-      const WABA_ID = "26801374196130743";
+    <!-- /wrapper -->
 
-      // ── Delete state ──
-      let pendingDelete = null; // { id, name }
+    <script>
+      /* ═══════════════════════════════════════
+         CONFIG
+      ═══════════════════════════════════════ */
+      const API_BASE = "http://localhost:4000/wap-official/template";
+      const CRED_BASE = "http://localhost:4000/wap-official/credencial";
+      const WABA_ID = "26801374196130743";
+      const USER_ID = "99435766-b93b-4741-9fcf-3d1715e7f174";
+
+      /* ═══════════════════════════════════════
+         TABS
+      ═══════════════════════════════════════ */
+      function switchTab(name, btn) {
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + name).classList.add("active");
+        if (name === "credenciais") loadCredenciais();
+      }
+
+      /* ═══════════════════════════════════════
+         TEMPLATE — Delete overlay
+      ═══════════════════════════════════════ */
+      let pendingDelete = null;
 
       function openConfirm(id, name) {
         pendingDelete = { id, name };
-        document.getElementById("confirm-tpl-label").textContent =
-          `ID: ${id}  ·  ${name}`;
+        document.getElementById(
+          "confirm-tpl-label"
+        ).textContent = `ID: ${id}  ·  ${name}`;
         document.getElementById("confirm-overlay").classList.add("visible");
         document.getElementById("confirm-delete-btn").disabled = false;
         document.getElementById("confirm-delete-btn").textContent = "Excluir";
       }
-
       function closeConfirm() {
         document.getElementById("confirm-overlay").classList.remove("visible");
         pendingDelete = null;
       }
-
-      // Close overlay on backdrop click
       document
         .getElementById("confirm-overlay")
         .addEventListener("click", function (e) {
           if (e.target === this) closeConfirm();
         });
-
       async function confirmDelete() {
         if (!pendingDelete) return;
         const { id, name } = pendingDelete;
@@ -917,12 +1443,14 @@
         btn.textContent = "Excluindo…";
         try {
           const res = await fetch(
-            `${API_BASE}/${encodeURIComponent(id)}?name=${encodeURIComponent(name)}`,
-            { method: "DELETE" },
+            `${API_BASE}/${encodeURIComponent(id)}?name=${encodeURIComponent(
+              name
+            )}`,
+            { method: "DELETE" }
           );
           if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || `Erro ${res.status}`);
+            const d = await res.json().catch(() => ({}));
+            throw new Error(d.error || `Erro ${res.status}`);
           }
           closeConfirm();
           loadTemplates();
@@ -933,8 +1461,9 @@
         }
       }
 
-      // ────────────────────────────────────────────
-
+      /* ═══════════════════════════════════════
+         TEMPLATE — Structures / builder
+      ═══════════════════════════════════════ */
       const STRUCTURES = [
         {
           id: "notificacao_simples",
@@ -1022,7 +1551,9 @@
       }
 
       function varHint(...vars) {
-        return `<div class="var-hint">Clique para inserir: ${vars.map((v) => `<span onclick="insertVar(this,'${v}')">${v}</span>`).join(" ")}</div>`;
+        return `<div class="var-hint">Clique para inserir: ${vars
+          .map((v) => `<span onclick="insertVar(this,'${v}')">${v}</span>`)
+          .join(" ")}</div>`;
       }
 
       function renderDynamicFields() {
@@ -1033,38 +1564,44 @@
           div.className = "block";
           if (block === "HEADER_TEXT") {
             div.innerHTML = `<div class="block-header"><span class="block-icon">HDR</span><span class="block-label">Header — Texto</span></div>
-        <div class="field"><label>Texto do cabeçalho</label><input id="header_text" placeholder="ex: Pedido #{{1}} confirmado" oninput="renderPreview()" />${varHint("{{1}}")}</div>`;
+              <div class="field"><label>Texto do cabeçalho</label><input id="header_text" placeholder="ex: Pedido #{{1}} confirmado" oninput="renderPreview()" />${varHint(
+                "{{1}}"
+              )}</div>`;
           } else if (block === "HEADER_IMAGE") {
             div.innerHTML = `<div class="block-header"><span class="block-icon">HDR</span><span class="block-label">Header — Imagem</span></div>
-        <p style="font-size:12px;color:var(--muted);line-height:1.6">📎 A imagem será enviada dinamicamente no momento do disparo. Nenhum campo necessário aqui.</p>`;
+              <p style="font-size:12px;color:var(--muted);line-height:1.6">📎 A imagem será enviada dinamicamente no momento do disparo.</p>`;
           } else if (block === "BODY") {
             div.innerHTML = `<div class="block-header"><span class="block-icon">BDY</span><span class="block-label">Body</span></div>
-        <div class="field"><label>Texto da mensagem</label><textarea id="body_text" rows="3" placeholder="ex: Olá {{1}}, seu pedido de R$ {{2}} foi aprovado!" oninput="renderPreview()"></textarea>${varHint("{{1}}", "{{2}}", "{{3}}")}</div>`;
+              <div class="field"><label>Texto da mensagem</label><textarea id="body_text" rows="3" placeholder="ex: Olá {{1}}, seu pedido de R$ {{2}} foi aprovado!" oninput="renderPreview()"></textarea>${varHint(
+                "{{1}}",
+                "{{2}}",
+                "{{3}}"
+              )}</div>`;
           } else if (block === "FOOTER") {
             div.innerHTML = `<div class="block-header"><span class="block-icon">FTR</span><span class="block-label">Footer</span></div>
-        <div class="field"><label>Texto do rodapé</label><input id="footer_text" placeholder="ex: Obrigado por comprar conosco!" oninput="renderPreview()" /></div>`;
+              <div class="field"><label>Texto do rodapé</label><input id="footer_text" placeholder="ex: Obrigado por comprar conosco!" oninput="renderPreview()" /></div>`;
           } else if (block === "BUTTONS_QR") {
             div.innerHTML = `<div class="block-header"><span class="block-icon">BTN</span><span class="block-label">Botões Quick Reply</span></div>
-        <div class="btn-group">
-          <div><span class="btn-type-badge badge-QR">QUICK REPLY 1 *</span><input id="qr1" placeholder="ex: Confirmar" oninput="renderPreview()" /></div>
-          <div><span class="btn-type-badge badge-QR">QUICK REPLY 2 *</span><input id="qr2" placeholder="ex: Cancelar" oninput="renderPreview()" /></div>
-          <div><span class="btn-type-badge badge-QR">QUICK REPLY 3 (opcional)</span><input id="qr3" placeholder="ex: Falar com atendente" oninput="renderPreview()" /></div>
-        </div>`;
+              <div class="btn-group">
+                <div><span class="btn-type-badge badge-QR">QUICK REPLY 1 *</span><input id="qr1" placeholder="ex: Confirmar" oninput="renderPreview()" /></div>
+                <div><span class="btn-type-badge badge-QR">QUICK REPLY 2 *</span><input id="qr2" placeholder="ex: Cancelar" oninput="renderPreview()" /></div>
+                <div><span class="btn-type-badge badge-QR">QUICK REPLY 3 (opcional)</span><input id="qr3" placeholder="ex: Falar com atendente" oninput="renderPreview()" /></div>
+              </div>`;
           } else if (block === "BUTTONS_URL") {
             div.innerHTML = `<div class="block-header"><span class="block-icon">BTN</span><span class="block-label">Botão URL</span></div>
-        <div class="btn-row">
-          <div><span class="btn-type-badge badge-URL">TEXTO DO BOTÃO *</span><input id="url_text" placeholder="ex: Acessar Portal" oninput="renderPreview()" /></div>
-          <div><span class="btn-type-badge badge-URL">URL *</span><input id="url_url" placeholder="https://meusite.com/{{1}}" oninput="renderPreview()" /></div>
-        </div>`;
+              <div class="btn-row">
+                <div><span class="btn-type-badge badge-URL">TEXTO DO BOTÃO *</span><input id="url_text" placeholder="ex: Acessar Portal" oninput="renderPreview()" /></div>
+                <div><span class="btn-type-badge badge-URL">URL *</span><input id="url_url" placeholder="https://meusite.com/{{1}}" oninput="renderPreview()" /></div>
+              </div>`;
           } else if (block === "BUTTONS_MIXED") {
             div.innerHTML = `<div class="block-header"><span class="block-icon">BTN</span><span class="block-label">Botões URL + Quick Reply</span></div>
-        <div class="btn-group">
-          <div class="btn-row">
-            <div><span class="btn-type-badge badge-URL">TEXTO BOTÃO URL *</span><input id="mixed_url_text" placeholder="ex: Comprar Agora" oninput="renderPreview()" /></div>
-            <div><span class="btn-type-badge badge-URL">URL *</span><input id="mixed_url_url" placeholder="https://loja.com/promo" oninput="renderPreview()" /></div>
-          </div>
-          <div><span class="btn-type-badge badge-QR">QUICK REPLY *</span><input id="mixed_qr" placeholder="ex: Não tenho interesse" oninput="renderPreview()" /></div>
-        </div>`;
+              <div class="btn-group">
+                <div class="btn-row">
+                  <div><span class="btn-type-badge badge-URL">TEXTO BOTÃO URL *</span><input id="mixed_url_text" placeholder="ex: Comprar Agora" oninput="renderPreview()" /></div>
+                  <div><span class="btn-type-badge badge-URL">URL *</span><input id="mixed_url_url" placeholder="https://loja.com/promo" oninput="renderPreview()" /></div>
+                </div>
+                <div><span class="btn-type-badge badge-QR">QUICK REPLY *</span><input id="mixed_qr" placeholder="ex: Não tenho interesse" oninput="renderPreview()" /></div>
+              </div>`;
           }
           c.appendChild(div);
         });
@@ -1099,11 +1636,17 @@
         if (blocks.includes("HEADER_IMAGE"))
           html += `<div class="wa-img-placeholder">🖼️</div>`;
         if (blocks.includes("HEADER_TEXT"))
-          html += `<div class="wa-header-txt">${esc(g("header_text") || "Cabeçalho aqui")}</div>`;
+          html += `<div class="wa-header-txt">${esc(
+            g("header_text") || "Cabeçalho aqui"
+          )}</div>`;
         if (blocks.includes("BODY"))
-          html += `<div class="wa-body">${esc(g("body_text") || "Texto do corpo da mensagem…").replace(/\n/g, "<br>")}</div>`;
+          html += `<div class="wa-body">${esc(
+            g("body_text") || "Texto do corpo da mensagem…"
+          ).replace(/\n/g, "<br>")}</div>`;
         if (blocks.includes("FOOTER"))
-          html += `<div class="wa-footer">${esc(g("footer_text") || "Rodapé")}</div>`;
+          html += `<div class="wa-footer">${esc(
+            g("footer_text") || "Rodapé"
+          )}</div>`;
         html += `<div class="wa-time">12:34 ✓✓</div>`;
         if (blocks.includes("BUTTONS_QR")) {
           const btns = [
@@ -1117,9 +1660,15 @@
             `</div>`;
         }
         if (blocks.includes("BUTTONS_URL"))
-          html += `<div class="wa-divider"></div><div class="wa-buttons"><div class="wa-btn">🔗 ${esc(g("url_text") || "Acessar")}</div></div>`;
+          html += `<div class="wa-divider"></div><div class="wa-buttons"><div class="wa-btn">🔗 ${esc(
+            g("url_text") || "Acessar"
+          )}</div></div>`;
         if (blocks.includes("BUTTONS_MIXED"))
-          html += `<div class="wa-divider"></div><div class="wa-buttons"><div class="wa-btn">🔗 ${esc(g("mixed_url_text") || "Ver mais")}</div><div class="wa-btn">↩ ${esc(g("mixed_qr") || "Quick reply")}</div></div>`;
+          html += `<div class="wa-divider"></div><div class="wa-buttons"><div class="wa-btn">🔗 ${esc(
+            g("mixed_url_text") || "Ver mais"
+          )}</div><div class="wa-btn">↩ ${esc(
+            g("mixed_qr") || "Quick reply"
+          )}</div></div>`;
         html += `</div>`;
         document.getElementById("wa-preview").innerHTML = html;
       }
@@ -1178,7 +1727,7 @@
         const body = p.components.find((c) => c.type === "BODY");
         if (!body || !body.text) return "O texto do BODY é obrigatório.";
         const hdr = p.components.find(
-          (c) => c.type === "HEADER" && c.format === "TEXT",
+          (c) => c.type === "HEADER" && c.format === "TEXT"
         );
         if (hdr && !hdr.text) return "Texto do HEADER está vazio.";
         if (selected.blocks.includes("BUTTONS_QR") && !g("qr1"))
@@ -1250,7 +1799,9 @@
           const pills = comp.example.body_text[0]
             .map(
               (v, i) =>
-                `<span class="ex-pill"><span class="ex-var">{{${i + 1}}}</span> ${escH(v)}</span>`,
+                `<span class="ex-pill"><span class="ex-var">{{${
+                  i + 1
+                }}}</span> ${escH(v)}</span>`
             )
             .join("");
           return `<div class="ex-row"><span class="ex-label">exemplo</span>${pills}</div>`;
@@ -1266,7 +1817,11 @@
               const urlLine = b.url
                 ? `<div class="detail-btn-url">&#128279; ${escH(b.url)}</div>`
                 : "";
-              return `<div class="detail-btn-row"><span class="detail-btn-type ${cls}">${b.type}</span><span class="detail-btn-text">${escH(b.text || "")}</span>${urlLine}</div>`;
+              return `<div class="detail-btn-row"><span class="detail-btn-type ${cls}">${
+                b.type
+              }</span><span class="detail-btn-text">${escH(
+                b.text || ""
+              )}</span>${urlLine}</div>`;
             })
             .join("");
           return `<div class="detail-block"><div class="detail-block-head"><span class="detail-block-type">BUTTONS</span></div><div class="detail-buttons">${btnsHtml}</div></div>`;
@@ -1280,8 +1835,11 @@
         const txt = comp.text
           ? escH(comp.text)
           : '<span style="color:var(--muted);font-style:italic">vazio</span>';
-        const ex = examplePills(comp);
-        return `<div class="detail-block"><div class="detail-block-head"><span class="detail-block-type">${comp.type}</span>${fmtBadge}</div><div class="detail-block-content">${txt}</div>${ex}</div>`;
+        return `<div class="detail-block"><div class="detail-block-head"><span class="detail-block-type">${
+          comp.type
+        }</span>${fmtBadge}</div><div class="detail-block-content">${txt}</div>${examplePills(
+          comp
+        )}</div>`;
       }
 
       async function loadTemplates() {
@@ -1305,38 +1863,40 @@
             const compSummary = (t.components || [])
               .map((c) => c.type)
               .join(" · ");
-
-            const tplId = t.id || "";
-            const tplName = t.name || "";
-
+            const tplId = t.id || "",
+              tplName = t.name || "";
             item.innerHTML = `
-        <div class="tpl-header" onclick="this.closest('.tpl-item').classList.toggle('open')">
-          <div class="status-dot dot-${st}"></div>
-          <div class="tpl-name">${escH(tplName)}</div>
-          <span class="cat-badge cat-${t.category}">${t.category}</span>
-          <span class="status-label sl-${st}">${st}</span>
-          <span class="tpl-chevron">▼</span>
-        </div>
-        <div class="tpl-body">
-          <div class="tpl-meta">
-            <span style="color:var(--muted)">ID:</span><span style="font-family:var(--mono)">${escH(tplId) || "—"}</span>
-            &nbsp;·&nbsp;
-            <span style="color:var(--muted)">Idioma:</span><span>${t.language || "—"}</span>
-            &nbsp;·&nbsp;
-            <span style="color:var(--muted)">Blocos:</span><span style="font-family:var(--mono)">${compSummary || "—"}</span>
-          </div>
-          ${blocksHtml}
-          <button
-            class="delete-btn"
-            onclick="openConfirm('${escH(tplId)}', '${escH(tplName)}')"
-            title="Excluir template"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-            </svg>
-            Excluir template
-          </button>
-        </div>`;
+              <div class="tpl-header" onclick="this.closest('.tpl-item').classList.toggle('open')">
+                <div class="status-dot dot-${st}"></div>
+                <div class="tpl-name">${escH(tplName)}</div>
+                <span class="cat-badge cat-${t.category}">${t.category}</span>
+                <span class="status-label sl-${st}">${st}</span>
+                <span class="tpl-chevron">▼</span>
+              </div>
+              <div class="tpl-body">
+                <div class="tpl-meta">
+                  <span style="color:var(--muted)">ID:</span><span style="font-family:var(--mono)">${
+                    escH(tplId) || "—"
+                  }</span>
+                  &nbsp;·&nbsp;
+                  <span style="color:var(--muted)">Idioma:</span><span>${
+                    t.language || "—"
+                  }</span>
+                  &nbsp;·&nbsp;
+                  <span style="color:var(--muted)">Blocos:</span><span style="font-family:var(--mono)">${
+                    compSummary || "—"
+                  }</span>
+                </div>
+                ${blocksHtml}
+                <button class="delete-btn" onclick="openConfirm('${escH(
+                  tplId
+                )}','${escH(tplName)}')" title="Excluir template">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                  </svg>
+                  Excluir template
+                </button>
+              </div>`;
             list.appendChild(item);
           });
         } catch {
@@ -1344,6 +1904,272 @@
         }
       }
 
+      /* ═══════════════════════════════════════
+         CREDENTIALS CRUD
+      ═══════════════════════════════════════ */
+      let editingCredId = null;
+      let pendingCredDelete = null;
+
+      /* ── helpers ── */
+      function credMsg(text, type = "info") {
+        const el = document.getElementById("cred-msg");
+        el.className = "cred-msg show " + type;
+        el.textContent = text;
+        setTimeout(() => (el.className = "cred-msg"), 4000);
+      }
+
+      function toggleTokenVis(inputId, btn) {
+        const inp = document.getElementById(inputId);
+        inp.type = inp.type === "password" ? "text" : "password";
+        btn.textContent = inp.type === "password" ? "👁" : "🙈";
+      }
+
+      function fmtDate(iso) {
+        if (!iso) return "—";
+        try {
+          return new Date(iso).toLocaleString("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          });
+        } catch {
+          return iso;
+        }
+      }
+
+      function maskToken(token) {
+        if (!token || token.length < 12) return token;
+        return token.slice(0, 8) + "•".repeat(12) + token.slice(-6);
+      }
+
+      /* ── load list ── */
+      async function loadCredenciais() {
+        const list = document.getElementById("cred-list");
+        list.innerHTML = `<div class="cred-empty">Carregando…</div>`;
+        try {
+          const res = await fetch(`${CRED_BASE}/${USER_ID}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const raw = await res.json();
+
+          // API may return single object or array
+          const items = Array.isArray(raw) ? raw : raw && raw.id ? [raw] : [];
+
+          list.innerHTML = "";
+          if (!items.length) {
+            list.innerHTML = `<div class="cred-empty">Nenhuma credencial encontrada.</div>`;
+            return;
+          }
+          items.forEach((cred) => renderCredCard(cred, list));
+        } catch (e) {
+          list.innerHTML = `<div class="cred-empty" style="color:var(--danger)">Erro ao carregar: ${escH(
+            e.message
+          )}</div>`;
+        }
+      }
+
+      /* ── render a credential card ── */
+      function renderCredCard(cred, container) {
+        const card = document.createElement("div");
+        card.className = "cred-card";
+        card.id = `cred-card-${cred.id}`;
+        const masked = maskToken(cred.token || "");
+        card.innerHTML = `
+          <div class="cred-card-head">
+            <span class="cred-card-id">#${escH(String(cred.id))}</span>
+            <span class="cred-card-waba">WABA: ${escH(
+              cred.waba_id || "—"
+            )}</span>
+            <span class="cred-card-date">${fmtDate(cred.createdAt)}</span>
+          </div>
+          <div class="cred-card-body">
+            <div class="cred-user-row">
+              <span class="cred-user-label">User</span>
+              <span class="cred-user-val">${escH(cred.user_id || "—")}</span>
+            </div>
+            <div class="cred-token-row">
+              <span class="cred-token-label">Token</span>
+              <span
+                class="cred-token-val"
+                title="Clique para revelar"
+                data-full="${escH(cred.token || "")}"
+                data-masked="${escH(masked)}"
+                onclick="toggleCardToken(this)"
+              >${escH(masked)}</span>
+            </div>
+            <div class="cred-actions">
+              <button class="cred-btn info" style="padding:7px 13px;font-size:12px" onclick="startEditCred(${JSON.stringify(
+                cred
+              ).replace(/"/g, "&quot;")})">✏️ Editar</button>
+              <button class="cred-btn danger-outline" style="padding:7px 13px;font-size:12px" onclick="openCredConfirm(${
+                cred.id
+              },'${escH(cred.waba_id || "")}')">🗑 Excluir</button>
+            </div>
+          </div>`;
+        container.appendChild(card);
+      }
+
+      /* ── toggle token reveal in card ── */
+      function toggleCardToken(el) {
+        const isRevealed = el.classList.contains("revealed");
+        el.textContent = isRevealed ? el.dataset.masked : el.dataset.full;
+        el.classList.toggle("revealed", !isRevealed);
+        el.title = isRevealed ? "Clique para revelar" : "Clique para ocultar";
+      }
+
+      /* ── start editing ── */
+      function startEditCred(cred) {
+        editingCredId = cred.id;
+        document.getElementById("cred-user-id").value = cred.user_id || "";
+        document.getElementById("cred-waba-id").value = cred.waba_id || "";
+        document.getElementById("cred-token").value = cred.token || "";
+        document.getElementById("cred-token").type = "password";
+
+        document.getElementById("cred-form-icon").textContent = "✏️";
+        document.getElementById("cred-form-icon").className =
+          "cred-form-icon edit";
+        document.getElementById("cred-form-title-text").textContent =
+          "Editar Credencial";
+        document.getElementById("cred-form-subtitle").textContent =
+          "Altere os campos desejados";
+        document.getElementById("cred-save-label").textContent =
+          "💾 Salvar Alterações";
+        document.getElementById(
+          "edit-cred-id-label"
+        ).textContent = `#${cred.id}`;
+        document.getElementById("edit-mode-banner").classList.add("show");
+        document.getElementById("cred-cancel-btn").style.display = "";
+
+        // scroll to form
+        document
+          .querySelector(".cred-form-card")
+          .scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      /* ── reset form ── */
+      function resetCredForm() {
+        editingCredId = null;
+        document.getElementById("cred-user-id").value = USER_ID;
+        document.getElementById("cred-waba-id").value = "";
+        document.getElementById("cred-token").value = "";
+        document.getElementById("cred-token").type = "password";
+
+        document.getElementById("cred-form-icon").textContent = "🔑";
+        document.getElementById("cred-form-icon").className =
+          "cred-form-icon create";
+        document.getElementById("cred-form-title-text").textContent =
+          "Nova Credencial";
+        document.getElementById("cred-form-subtitle").textContent =
+          "Preencha os dados abaixo";
+        document.getElementById("cred-save-label").textContent =
+          "💾 Criar Credencial";
+        document.getElementById("edit-mode-banner").classList.remove("show");
+        document.getElementById("cred-cancel-btn").style.display = "none";
+        document.getElementById("cred-msg").className = "cred-msg";
+      }
+
+      /* ── create or update ── */
+      async function saveCredencial() {
+        const user_id = document.getElementById("cred-user-id").value.trim();
+        const waba_id = document.getElementById("cred-waba-id").value.trim();
+        const token = document.getElementById("cred-token").value.trim();
+
+        if (!user_id) {
+          credMsg("❌ User ID é obrigatório.", "error");
+          return;
+        }
+        if (!waba_id) {
+          credMsg("❌ WABA ID é obrigatório.", "error");
+          return;
+        }
+        if (!token) {
+          credMsg("❌ Token é obrigatório.", "error");
+          return;
+        }
+
+        const btn = document.getElementById("cred-save-btn");
+        btn.disabled = true;
+        document.getElementById("cred-save-label").textContent = editingCredId
+          ? "Salvando…"
+          : "Criando…";
+
+        const body = JSON.stringify({ user_id, waba_id, token });
+        const isEdit = editingCredId !== null;
+        const url = isEdit ? `${CRED_BASE}/${editingCredId}` : CRED_BASE;
+        const method = isEdit ? "PUT" : "POST";
+
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body,
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok)
+            throw new Error(data.error || data.message || `HTTP ${res.status}`);
+          credMsg(
+            isEdit ? "✅ Credencial atualizada!" : "✅ Credencial criada!",
+            "success"
+          );
+          resetCredForm();
+          loadCredenciais();
+        } catch (e) {
+          credMsg("❌ " + e.message, "error");
+        } finally {
+          btn.disabled = false;
+          document.getElementById("cred-save-label").textContent = isEdit
+            ? "💾 Salvar Alterações"
+            : "💾 Criar Credencial";
+        }
+      }
+
+      /* ── delete confirm overlay ── */
+      function openCredConfirm(id, wabaId) {
+        pendingCredDelete = { id, wabaId };
+        document.getElementById(
+          "cred-confirm-label"
+        ).textContent = `ID: ${id}  ·  WABA: ${wabaId}`;
+        document
+          .getElementById("cred-confirm-overlay")
+          .classList.add("visible");
+        document.getElementById("cred-confirm-delete-btn").disabled = false;
+        document.getElementById("cred-confirm-delete-btn").textContent =
+          "Excluir";
+      }
+      function closeCredConfirm() {
+        document
+          .getElementById("cred-confirm-overlay")
+          .classList.remove("visible");
+        pendingCredDelete = null;
+      }
+      document
+        .getElementById("cred-confirm-overlay")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeCredConfirm();
+        });
+      async function confirmCredDelete() {
+        if (!pendingCredDelete) return;
+        const { id } = pendingCredDelete;
+        const btn = document.getElementById("cred-confirm-delete-btn");
+        btn.disabled = true;
+        btn.textContent = "Excluindo…";
+        try {
+          const res = await fetch(`${CRED_BASE}/${id}`, { method: "DELETE" });
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            throw new Error(d.error || d.message || `HTTP ${res.status}`);
+          }
+          closeCredConfirm();
+          // if we were editing this one, reset form
+          if (editingCredId === id) resetCredForm();
+          loadCredenciais();
+          credMsg("🗑 Credencial excluída.", "info");
+        } catch (e) {
+          btn.disabled = false;
+          btn.textContent = "Excluir";
+          alert("❌ " + e.message);
+        }
+      }
+
+      /* ── init ── */
       renderPresets();
       loadTemplates();
     </script>
