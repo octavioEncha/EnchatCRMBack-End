@@ -78,20 +78,30 @@ export const deleteCredentialById = async (req, res) => {
 };
 
 export const verifyTokenByMeta = async (req, res) => {
-  const inboxId = req.params.id;
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-  res.status(200).send(challenge);
   try {
-    return await wap_oficial_service.setVerification({ inboxId });
+    const inboxId = req.params.id;
+
+    const mode = req.query["hub.mode"];
+    const token = req.query["hub.verify_token"];
+    const challenge = req.query["hub.challenge"];
+
+    if (!mode || !token || !challenge) {
+      return res.status(400).json({ error: "Parâmetros inválidos" });
+    }
+
+    await wap_oficial_service.setVerification({ inboxId });
+
+    return res.status(200).send(challenge);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Erro na verificação Meta:", error);
+
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 };
 
 export const receiveMessages = async (req, res) => {
-  res.status(200).json({ message: "Success!" });
   try {
     const inboxId = req.params.id;
     const body = req.body;
@@ -104,4 +114,5 @@ export const receiveMessages = async (req, res) => {
     console.error(error);
     return res.status(400).json({ error: error.message });
   }
+  res.status(200).json({ message: "Success!" });
 };
