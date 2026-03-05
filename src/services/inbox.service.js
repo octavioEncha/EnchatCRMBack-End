@@ -135,5 +135,6 @@ export const deleteInboxById = async ({ id }) => {
 };
 
 export const setVerificationInInboxByMeta = async ({ inboxId }) => {
+  console.log("INBOX SERVICE");
   return await inboxModel.setVerificationInInboxByMeta({ inboxId });
 };

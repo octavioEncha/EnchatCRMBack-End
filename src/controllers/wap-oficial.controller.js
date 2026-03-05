@@ -85,10 +85,7 @@ export const verifyTokenByMeta = async (req, res) => {
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
 
-    if (!mode || !token || !challenge) {
-      return res.status(400).json({ error: "Parâmetros inválidos" });
-    }
-
+    console.log("TO AQUI CARAI CONTROLLER");
     await wap_oficial_service.setVerification({ inboxId });
 
     return res.status(200).send(challenge);
