@@ -143,17 +143,27 @@ export const setVerification = async ({ inboxId }) => {
   await setVerificationInInboxByMeta({ inboxId });
 };
 
+//const verifyMessage = await verifyMessageById({ messageId });
+
+//if (verifyMessage) {
+//  return null;
+//}
+
 export const receiveMessages = async ({ inboxId, data }) => {
-  const messageType = data[0].messages[0].type;
-  const messageId = data[0].messages[0].id;
-  const senderName = data[0].contacts[0].profile.name;
-  const senderPhone = data[0].contacts[0].wa_id;
+  const value = data?.[0]?.body?.entry?.[0]?.changes?.[0]?.value;
 
-  //const verifyMessage = await verifyMessageById({ messageId });
+  if (!value?.messages) {
+    console.log("Nenhuma mensagem recebida.");
+    return;
+  }
 
-  //if (verifyMessage) {
-  //  return null;
-  //}
+  const message = value.messages[0];
+  const contact = value.contacts?.[0];
+
+  const messageType = message.type;
+  const messageId = message.id;
+  const senderName = contact?.profile?.name;
+  const senderPhone = contact?.wa_id;
 
   let lead = "";
 
@@ -177,13 +187,13 @@ export const receiveMessages = async ({ inboxId, data }) => {
       inbox_id: inboxId,
       lead_id: lead.id,
     };
-    conversation = createNewConversation({ data: conversationData });
+    conversation = await createNewConversation({ data: conversationData });
   }
 
   if (messageType === "text") {
     const message = data[0].messages[0].text.body;
 
-    const createdMessage = await createMessage({
+    const createdNewMessage = await createMessage({
       data: {
         conversation_id: conversation.id,
         lead_id: lead.id,
@@ -194,13 +204,14 @@ export const receiveMessages = async ({ inboxId, data }) => {
         messageId,
       },
     });
-    if (!createdMessage) throw new Error("Erro ao salvar mensagem");
+
+    if (!createdNewMessage) throw new Error("Erro ao salvar mensagem");
     await updateLastMessageTimestamp({
       conversationId: conversation.id,
     });
 
     const finalMessage = {
-      id: createdMessage.id,
+      id: createdNewMessage.id,
       conversation_id: conversation.id,
       lead_id: lead.id,
       direction: "incoming",
