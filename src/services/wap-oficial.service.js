@@ -150,7 +150,7 @@ export const setVerification = async ({ inboxId }) => {
 //}
 
 export const receiveMessages = async ({ inboxId, data }) => {
-  const value = data?.[0]?.body?.entry?.[0]?.changes?.[0]?.value;
+  const value = data?.entry?.[0]?.changes?.[0]?.value; // ✅ Caminho correto
 
   if (!value?.messages) {
     console.log("Nenhuma mensagem recebida.");
@@ -165,12 +165,7 @@ export const receiveMessages = async ({ inboxId, data }) => {
   const senderName = contact?.profile?.name;
   const senderPhone = contact?.wa_id;
 
-  let lead = "";
-
-  lead = await searchLead({
-    phone: senderPhone,
-    instance: inboxId,
-  });
+  let lead = await searchLead({ phone: senderPhone, instance: inboxId });
 
   if (!lead) {
     lead = await createNewLeadByAPIOficial({
@@ -183,15 +178,13 @@ export const receiveMessages = async ({ inboxId, data }) => {
   let conversation = await searchConversation({ lead_id: lead.id });
 
   if (!conversation) {
-    const conversationData = {
-      inbox_id: inboxId,
-      lead_id: lead.id,
-    };
-    conversation = await createNewConversation({ data: conversationData });
+    conversation = await createNewConversation({
+      data: { inbox_id: inboxId, lead_id: lead.id },
+    });
   }
 
   if (messageType === "text") {
-    const message = data[0].messages[0].text.body;
+    const messageContent = message.text.body; // ✅ Usando o `message` já extraído acima
 
     const createdNewMessage = await createMessage({
       data: {
@@ -200,22 +193,21 @@ export const receiveMessages = async ({ inboxId, data }) => {
         inbox: inboxId,
         senderType: "lead",
         mediaType: "text",
-        messageContent: message,
+        messageContent,
         messageId,
       },
     });
 
     if (!createdNewMessage) throw new Error("Erro ao salvar mensagem");
-    await updateLastMessageTimestamp({
-      conversationId: conversation.id,
-    });
+
+    await updateLastMessageTimestamp({ conversationId: conversation.id });
 
     const finalMessage = {
       id: createdNewMessage.id,
       conversation_id: conversation.id,
       lead_id: lead.id,
       direction: "incoming",
-      text: message,
+      text: messageContent,
       timestamp: new Date(),
       contact: lead.phone,
       user: lead.name,
