@@ -1,5 +1,9 @@
 import * as wapModel from "../models/wap-oficial.model.js";
-import { searchLead, createNewLeadByAPIOficial } from "./leads.service.js";
+import {
+  searchLead,
+  createNewLeadByAPIOficial,
+  searchLeadId,
+} from "./leads.service.js";
 import {
   searchConversation,
   createNewConversation,
@@ -7,11 +11,14 @@ import {
 import {
   createMessage,
   updateLastMessageTimestamp,
+  updateLastMessageInboundTimestamp,
 } from "../models/message.model.js";
 import { sendMessageToClientConnected } from "./websocket.service.js";
-import { setVerificationInInboxByMeta } from "./inbox.service.js";
-
-import { verifyMessageById } from "./messages.service.js";
+import {
+  setVerificationInInboxByMeta,
+  findInboxByIdOrThrow,
+} from "./inbox.service.js";
+import * as messageService from "./messages.service.js";
 
 import Credential from "../entities/credencial-wap.entity.js";
 
@@ -143,7 +150,7 @@ export const setVerification = async ({ inboxId }) => {
   await setVerificationInInboxByMeta({ inboxId });
 };
 
-//const verifyMessage = await verifyMessageById({ messageId });
+//const verifyMessage = await message.servicesssa({ messageId });
 
 //if (verifyMessage) {
 //  return null;
@@ -202,19 +209,128 @@ export const receiveMessages = async ({ inboxId, data }) => {
 
     await updateLastMessageTimestamp({ conversationId: conversation.id });
 
+    await updateLastMessageInboundTimestamp({
+      conversationId: conversation.id,
+    });
+
+    const now = new Date().toISOString();
+
     const finalMessage = {
       id: createdNewMessage.id,
       conversation_id: conversation.id,
       lead_id: lead.id,
+      inbox_provider: "whatsapp_official",
       direction: "incoming",
       text: messageContent,
-      timestamp: new Date(),
+      timestamp: now,
       contact: lead.phone,
+      last_inbound_message_at: now,
       user: lead.name,
       avatar: lead.avatar,
       ai_enabled: conversation.ai_enabled,
     };
 
+    console.log(finalMessage);
     await sendMessageToClientConnected({ instance: inboxId, finalMessage });
   }
+};
+
+export const sendMessageWith24HoursContext = async ({
+  inbox,
+  userId,
+  phone,
+  text,
+}) => {
+  if (!userId) {
+    throw new Error("userId não foi informado");
+  }
+
+  const credential = await getCredentialByUserId({
+    userId: userId,
+  });
+
+  const response = await fetch(
+    "https://graph.facebook.com/v22.0/" + inbox.phone_number_id + "/messages",
+    {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + credential.token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: phone,
+        type: "text",
+        text: {
+          body: text,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    console.log(await response.json());
+  }
+};
+
+export const sendTemplateForClientNumber = async ({ data }) => {
+  const inbox = await findInboxByIdOrThrow({ id: data.inbox_id });
+
+  const credential = await getCredentialByUserId({
+    userId: inbox.user_id,
+  });
+
+  const lead = await searchLeadId({ id: data.lead_id });
+
+  /*
+
+  const response = await fetch(
+    "https://graph.facebook.com/v22.0/" + inbox.phone_number_id + "/messages",
+    {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + credential.token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: lead.phone,
+        type: "template",
+        template: {
+          name: data.template_name,
+          language: {
+            code: data.template_language,
+          },
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    console.log(await response.json());
+  }
+    */
+
+  const templates = await getAllTemplatesByUserId({ id: inbox.user_id });
+
+  const templatefiltred = templates.find(
+    (template) => template.name === data.template_name
+  );
+
+  const header =
+    templatefiltred.components.find((c) => c.type === "HEADER")?.text || "";
+  const body =
+    templatefiltred.components.find((c) => c.type === "BODY")?.text || "";
+  const footer =
+    templatefiltred.components.find((c) => c.type === "FOOTER")?.text || "";
+
+  const content = [header, body, footer].filter(Boolean).join("\n\n");
+
+  const newData = {
+    content,
+    inbox: inbox.id,
+    lead: lead,
+  };
+
+  await messageService.saveMessageAndSendToClientWebSocket({ data: newData });
 };

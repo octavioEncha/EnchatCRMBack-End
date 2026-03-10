@@ -3,7 +3,8 @@ import * as leadsService from "./leads.service.js";
 import * as conversationService from "./conversation.service.js";
 import { findProfileById } from "../services/profile.service.js";
 import { sendingWebhookMessage } from "./webhook.service.js";
-
+import * as evolutionService from "./evolution.service.js";
+import * as wapService from "./wap-oficial.service.js";
 import * as messageModel from "../models/message.model.js";
 import * as attachmentModel from "../models/attachments.model.js";
 import { sendMessageToClientConnected } from "./websocket.service.js";
@@ -14,6 +15,7 @@ import {
   saveMessage,
 } from "../services/session.service.js";
 import { text } from "express";
+import { getInboxById } from "../models/inbox.model.js";
 
 /**
  * Retorna todas as mensagens de uma conversa específica
@@ -319,6 +321,8 @@ export const createNewMessageSendCRM = async ({
       throw new Error("Dados insuficientes");
     }
 
+    const inbox = await getInboxById({ id: sessionId });
+
     // 🔎 Busca lead
     const lead = await leadsService.searchLeadId({ id: leadId });
     if (!lead) throw new Error("Lead não encontrado");
@@ -340,12 +344,27 @@ export const createNewMessageSendCRM = async ({
       if (!conversation) throw new Error("Erro ao criar conversa");
     }
 
+    if (inbox.provider === "whatsapp_n_official") {
+      await evolutionService.sendMessageByPhoneNumberLead({
+        sessionId,
+        phone: lead.phone,
+        text: content,
+      });
+    } else if (inbox.provider === "whatsapp_official") {
+      await wapService.sendMessageWith24HoursContext({
+        inbox,
+        userId: inbox.user_id,
+        phone: lead.phone,
+        text: content,
+      });
+    }
+
     // 💾 Salva no banco
     const createdMessage = await messageModel.createNewMessageSendCRM({
       content,
       lead_id: lead.id,
       conversation_id: conversation.id,
-      senderType: user,
+      senderType: "user",
     });
 
     if (!createdMessage) {
@@ -355,26 +374,6 @@ export const createNewMessageSendCRM = async ({
     await messageModel.updateLastMessageTimestamp({
       conversationId: conversation.id,
     });
-
-    // 📤 Envia para Evolution
-    const response = await fetch(
-      `https://edvedder.encha.com.br/message/sendText/${sessionId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
-        },
-        body: JSON.stringify({
-          number: lead.phone,
-          text: content,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`⚠️ Falha ao enviar (${response.status})`);
-    }
 
     // 📡 Emite no socket
     const finalMessage = {
@@ -398,6 +397,44 @@ export const createNewMessageSendCRM = async ({
     console.error("❌ Erro em createNewMessageSendCRM:", err.message);
     throw err;
   }
+};
+
+export const saveMessageAndSendToClientWebSocket = async ({ data }) => {
+  const conversation = await conversationService.searchConversation({
+    lead_id: data.lead.id,
+  });
+
+  const createdMessage = await messageModel.createNewMessageSendCRM({
+    content: data.content,
+    lead_id: data.lead.id,
+    conversation_id: conversation.id,
+    senderType: "template",
+  });
+
+  if (!createdMessage) {
+    throw new Error("Erro ao salvar mensagem");
+  }
+
+  await messageModel.updateLastMessageTimestamp({
+    conversationId: conversation.id,
+  });
+
+  // 📡 Emite no socket
+  const finalMessage = {
+    id: createdMessage.id,
+    conversation_id: conversation.id,
+    lead_id: data.lead.id,
+    direction: "template",
+    text: data.content,
+    timestamp: new Date(),
+    contact: data.lead.phone,
+    user: data.lead.name,
+  };
+
+  await sendMessageToClientConnected({
+    instance: data.inbox,
+    finalMessage,
+  });
 };
 
 export const sendMessage = async ({ data }) => {

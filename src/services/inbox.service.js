@@ -41,6 +41,7 @@ export const createInbox = async ({ data }) => {
 
   const inbox = new Inbox({
     user_id: data.user_id,
+    phone_number_id: data.phone_number_id,
     provider: data.provider,
     api_key: null,
     webhook_url: null,
@@ -135,6 +136,5 @@ export const deleteInboxById = async ({ id }) => {
 };
 
 export const setVerificationInInboxByMeta = async ({ inboxId }) => {
-  console.log("INBOX SERVICE");
   return await inboxModel.setVerificationInInboxByMeta({ inboxId });
 };

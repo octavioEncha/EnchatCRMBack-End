@@ -13,6 +13,7 @@ export const createInbox = async ({ data }) => {
     .from("integration_channels")
     .insert({
       user_id: data.user_id,
+      phone_number_id: data.phone_number_id,
       provider: data.provider,
       name: data.name,
       prompt: data.prompt,
@@ -120,6 +121,7 @@ export const updateInboxById = async ({ id, data }) => {
     .from("integration_channels")
     .update({
       name: data.name,
+      phone_number_id: data.phone_number_id,
       prompt: data.prompt,
       api_key: data.api_key,
       webhook_url: data.webhook_url,

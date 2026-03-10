@@ -2,6 +2,7 @@ export default class Inbox {
   constructor({
     id,
     user_id,
+    phone_number_id,
     provider,
     api_key,
     webhook_url,
@@ -19,6 +20,7 @@ export default class Inbox {
     // IDs
     this.id = id || null;
     this.user_id = user_id || null;
+    this.phone_number_id = phone_number_id || null;
 
     // Config
     this.provider = provider || null;
@@ -112,6 +114,7 @@ export default class Inbox {
     return {
       id: this.id,
       user_id: this.user_id,
+      phone_number_id: this.phone_number_id,
       provider: this.provider,
       webhook_url: this.webhook_url,
       name: this.name,

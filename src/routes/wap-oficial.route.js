@@ -8,6 +8,11 @@ router.get("/template/:id", wap_oficialController.getAllTemplatesByUserId);
 
 router.post("/template", wap_oficialController.createNewTemplate);
 
+router.post(
+  "/template/send",
+  wap_oficialController.sendTemplateForClientNumber
+);
+
 router.delete("/template/:id", wap_oficialController.deleteTemplateById);
 
 //CREDENCIAIS -> Facebook (token e waba_id)

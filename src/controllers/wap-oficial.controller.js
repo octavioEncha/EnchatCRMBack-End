@@ -22,6 +22,18 @@ export const createNewTemplate = async (req, res) => {
   }
 };
 
+export const sendTemplateForClientNumber = async (req, res) => {
+  try {
+    const data = req.body;
+    await wap_oficial_service.sendTemplateForClientNumber({ data });
+    res.status(201).json({
+      message: "Template enviado com sucesso.",
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 export const deleteTemplateById = async (req, res) => {
   try {
     const id = req.params.id;

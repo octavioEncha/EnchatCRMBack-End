@@ -75,6 +75,18 @@ export const updateLastMessageTimestamp = async ({ conversationId }) => {
   return true;
 };
 
+export const updateLastMessageInboundTimestamp = async ({ conversationId }) => {
+  const now = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from("conversations")
+    .update({
+      last_inbound_message_at: now,
+    })
+    .eq("id", conversationId);
+
+  return true;
+};
+
 export const createMessageForShootingToLead = async ({
   content,
   lead_id,
