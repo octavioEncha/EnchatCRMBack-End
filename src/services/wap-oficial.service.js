@@ -150,12 +150,6 @@ export const setVerification = async ({ inboxId }) => {
   await setVerificationInInboxByMeta({ inboxId });
 };
 
-//const verifyMessage = await message.servicesssa({ messageId });
-
-//if (verifyMessage) {
-//  return null;
-//}
-
 export const receiveMessages = async ({ inboxId, data }) => {
   const value = data?.entry?.[0]?.changes?.[0]?.value; // ✅ Caminho correto
 
@@ -167,8 +161,16 @@ export const receiveMessages = async ({ inboxId, data }) => {
   const message = value.messages[0];
   const contact = value.contacts?.[0];
 
-  const messageType = message.type;
   const messageId = message.id;
+
+  const verifyMessage = await message.servicesssa({ messageId });
+
+  if (verifyMessage) {
+    return null;
+  }
+
+  const messageType = message.type;
+
   const senderName = contact?.profile?.name;
   const senderPhone = contact?.wa_id;
 
@@ -191,7 +193,7 @@ export const receiveMessages = async ({ inboxId, data }) => {
   }
 
   if (messageType === "text") {
-    const messageContent = message.text.body; // ✅ Usando o `message` já extraído acima
+    const messageContent = message.text.body;
 
     const createdNewMessage = await createMessage({
       data: {
@@ -282,8 +284,6 @@ export const sendTemplateForClientNumber = async ({ data }) => {
 
   const lead = await searchLeadId({ id: data.lead_id });
 
-  /*
-
   const response = await fetch(
     "https://graph.facebook.com/v22.0/" + inbox.phone_number_id + "/messages",
     {
@@ -307,9 +307,9 @@ export const sendTemplateForClientNumber = async ({ data }) => {
   );
 
   if (!response.ok) {
-    console.log(await response.json());
+    const data = await response.json();
+    throw new Error(data);
   }
-    */
 
   const templates = await getAllTemplatesByUserId({ id: inbox.user_id });
 
