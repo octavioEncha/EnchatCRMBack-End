@@ -163,7 +163,7 @@ export const receiveMessages = async ({ inboxId, data }) => {
 
   const messageId = message.id;
 
-  const verifyMessage = await message.servicesssa({ messageId });
+  const verifyMessage = await messageService.verifyMessageById({ messageId });
 
   if (verifyMessage) {
     return null;
