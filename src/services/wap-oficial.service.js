@@ -159,7 +159,7 @@ export const receiveMessages = async ({ inboxId, data }) => {
     console.log("Nenhuma mensagem recebida.");
     return;
   }
-  const messageId = data?.entry?.[0]?.id;
+  const messageId = data?.entry?.[0]?.changes?.[0]?.value.messages[0].id;
 
   if (await messageService.verifyMessageById({ messageId })) return null;
 
