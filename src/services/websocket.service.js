@@ -33,6 +33,6 @@ export const sendMessageToClientConnected = async ({
   } else if (finalMessage.direction === "template") {
     eventName = "template";
   }
-  console.log(finalMessage);
+
   global.io.to(sessions[sessionId].socketId).emit(eventName, finalMessage);
 };

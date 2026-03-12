@@ -12,6 +12,7 @@ import {
   createMessage,
   updateLastMessageTimestamp,
   updateLastMessageInboundTimestamp,
+  createMessageWithAttachment,
 } from "../models/message.model.js";
 import { sendMessageToClientConnected } from "./websocket.service.js";
 import {
@@ -21,6 +22,7 @@ import {
 import * as messageService from "./messages.service.js";
 
 import Credential from "../entities/credencial-wap.entity.js";
+import { uploadAttachment } from "../models/attachments.model.js";
 
 const token =
   "Bearer EAAW6RYtQT9kBQ5Gr16xyQhlZBFmhbcNlsRIl7ZCXUh1R3QnYo6FvzzXM7dFgP3cb39oFRZABUJUFVcLZAQs87ajbMrCjhoAcZB8DGe3cmQy6KL6Jh50SyFUo3fHVKCowrCAzeSZBZAhT7Mwqns80y3tyf3UWXEkrRebhh8T5FwaIW0ZBLZCywoJHhTExcUlYPaZAvegwZDZD";
@@ -151,31 +153,25 @@ export const setVerification = async ({ inboxId }) => {
 };
 
 export const receiveMessages = async ({ inboxId, data }) => {
-  const value = data?.entry?.[0]?.changes?.[0]?.value; // ✅ Caminho correto
+  const value = data?.entry?.[0]?.changes?.[0]?.value;
 
   if (!value?.messages) {
     console.log("Nenhuma mensagem recebida.");
     return;
   }
+  const messageId = data?.entry?.[0]?.id;
+
+  if (await messageService.verifyMessageById({ messageId })) return null;
 
   const message = value.messages[0];
   const contact = value.contacts?.[0];
 
-  const messageId = message.id;
-
-  const verifyMessage = await messageService.verifyMessageById({ messageId });
-
-  if (verifyMessage) {
-    return null;
-  }
-
   const messageType = message.type;
 
-  const senderName = contact?.profile?.name;
   const senderPhone = contact?.wa_id;
+  const senderName = contact?.profile?.name;
 
   let lead = await searchLead({ phone: senderPhone, instance: inboxId });
-
   if (!lead) {
     lead = await createNewLeadByAPIOficial({
       phone: senderPhone,
@@ -185,15 +181,91 @@ export const receiveMessages = async ({ inboxId, data }) => {
   }
 
   let conversation = await searchConversation({ lead_id: lead.id });
-
   if (!conversation) {
     conversation = await createNewConversation({
       data: { inbox_id: inboxId, lead_id: lead.id },
     });
   }
 
+  const MEDIA_TYPES = new Set([
+    "sticker",
+    "image",
+    "audio",
+    "video",
+    "document",
+  ]);
+
+  if (MEDIA_TYPES.has(messageType)) {
+    const mimeTypeMap = {
+      document: "application/pdf",
+      audio: "audio/mpeg",
+      image: "image/jpeg",
+      video: "video/mp4",
+      sticker: "image/jpeg",
+    };
+    const messageTypeMap = {
+      document: "documentMessage",
+      audio: "audioMessage",
+      image: "imageMessage",
+      video: "videoMessage",
+      sticker: "imageMessage",
+    };
+
+    const base64 = await getBase64ForMediaReceivesInWebhook({
+      inbox_id: inboxId,
+      url: message[messageType]?.url,
+    });
+
+    const uploadResult = await uploadAttachment({
+      buffer: Buffer.from(base64, "base64"),
+      contentType: mimeTypeMap[messageType],
+    });
+
+    const createdNewMessage = await createMessageWithAttachment({
+      data: {
+        conversation_id: conversation.id,
+        messageId,
+        senderType: "lead",
+        lead_id: lead.id,
+        attachmentUrl: uploadResult,
+        messageType: messageTypeMap[messageType],
+      },
+    });
+
+    await Promise.all([
+      updateLastMessageTimestamp({ conversationId: conversation.id }),
+      updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
+    ]);
+
+    const now = new Date().toISOString();
+
+    await sendMessageToClientConnected({
+      instance: inboxId,
+      finalMessage: {
+        id: createdNewMessage.id,
+        conversation_id: conversation.id,
+        lead_id: lead.id,
+        inbox_provider: "whatsapp_official",
+        direction: "incoming",
+        text: uploadResult,
+        mediaUrl: uploadResult,
+        mediaType: mimeTypeMap[messageType],
+        timestamp: now,
+        contact: lead.phone,
+        last_inbound_message_at: now,
+        user: lead.name,
+        avatar: lead.avatar,
+        ai_enabled: conversation.ai_enabled,
+      },
+    });
+
+    return;
+  }
+
   if (messageType === "text") {
-    const messageContent = message.text.body;
+    const messageContent = message.text?.body;
+    if (!messageContent)
+      throw new Error("Conteúdo de texto ausente na mensagem");
 
     const createdNewMessage = await createMessage({
       data: {
@@ -209,32 +281,59 @@ export const receiveMessages = async ({ inboxId, data }) => {
 
     if (!createdNewMessage) throw new Error("Erro ao salvar mensagem");
 
-    await updateLastMessageTimestamp({ conversationId: conversation.id });
-
-    await updateLastMessageInboundTimestamp({
-      conversationId: conversation.id,
-    });
+    await Promise.all([
+      updateLastMessageTimestamp({ conversationId: conversation.id }),
+      updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
+    ]);
 
     const now = new Date().toISOString();
 
-    const finalMessage = {
-      id: createdNewMessage.id,
-      conversation_id: conversation.id,
-      lead_id: lead.id,
-      inbox_provider: "whatsapp_official",
-      direction: "incoming",
-      text: messageContent,
-      timestamp: now,
-      contact: lead.phone,
-      last_inbound_message_at: now,
-      user: lead.name,
-      avatar: lead.avatar,
-      ai_enabled: conversation.ai_enabled,
-    };
+    await sendMessageToClientConnected({
+      instance: inboxId,
+      finalMessage: {
+        id: createdNewMessage.id,
+        conversation_id: conversation.id,
+        lead_id: lead.id,
+        inbox_provider: "whatsapp_official",
+        direction: "incoming",
+        text: messageContent,
+        timestamp: now,
+        contact: lead.phone,
+        last_inbound_message_at: now,
+        user: lead.name,
+        avatar: lead.avatar,
+        ai_enabled: conversation.ai_enabled,
+      },
+    });
 
-    console.log(finalMessage);
-    await sendMessageToClientConnected({ instance: inboxId, finalMessage });
+    return;
   }
+
+  throw new Error(
+    "Message type is not supported, message type: " + messageType
+  );
+};
+
+export const getBase64ForMediaReceivesInWebhook = async ({ inbox_id, url }) => {
+  console.log(inbox_id);
+
+  const inbox = await findInboxByIdOrThrow({ id: inbox_id });
+
+  const credential = await getCredentialByUserId({
+    userId: inbox.user_id,
+  });
+  console.log(url);
+  const response = await fetch(url, {
+    headers: {
+      Authorization: "Bearer " + credential.token,
+    },
+  });
+
+  const buffer = await response.arrayBuffer();
+
+  const base64 = Buffer.from(buffer).toString("base64");
+
+  return base64;
 };
 
 export const sendMessageWith24HoursContext = async ({

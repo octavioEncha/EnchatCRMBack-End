@@ -375,6 +375,7 @@ export const createNewMessageSendCRM = async ({
       conversationId: conversation.id,
     });
 
+    /*
     // 📡 Emite no socket
     const finalMessage = {
       id: createdMessage.id,
@@ -391,7 +392,7 @@ export const createNewMessageSendCRM = async ({
       instance: sessionId,
       finalMessage,
     });
-
+    */
     return { lead, conversation, message: createdMessage };
   } catch (err) {
     console.error("❌ Erro em createNewMessageSendCRM:", err.message);
