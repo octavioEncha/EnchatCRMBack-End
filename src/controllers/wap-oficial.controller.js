@@ -30,6 +30,7 @@ export const sendTemplateForClientNumber = async (req, res) => {
       message: "Template enviado com sucesso.",
     });
   } catch (error) {
+    console.log(error.message);
     res.status(400).json({ error: error.message });
   }
 };

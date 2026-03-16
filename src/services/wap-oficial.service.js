@@ -376,12 +376,67 @@ export const sendMessageWith24HoursContext = async ({
 
 export const sendTemplateForClientNumber = async ({ data }) => {
   const inbox = await findInboxByIdOrThrow({ id: data.inbox_id });
+  const credential = await getCredentialByUserId({ userId: inbox.user_id });
+  const lead = await searchLeadId({ id: data.lead_id });
 
-  const credential = await getCredentialByUserId({
-    userId: inbox.user_id,
+  // Pega todos os templates do usuário
+  const templates = await getAllTemplatesByUserId({ id: inbox.user_id });
+
+  const templatefiltred = templates.find(
+    (template) => template.name === data.template_name
+  );
+
+  if (!templatefiltred) throw new Error("Template não encontrado");
+
+  // Monta componentes: body, header, footer
+  const components = [];
+
+  templatefiltred.components.forEach((c) => {
+    if (c.type === "BODY" || c.type === "HEADER" || c.type === "FOOTER") {
+      const comp = { type: c.type.toLowerCase() }; // "body", "header", "footer"
+
+      // Se o componente tem variáveis, adiciona os parâmetros
+      if (c.text.includes("{{") && Array.isArray(data.variables)) {
+        comp.parameters = data.variables.map((v) => ({
+          type: "text",
+          text: v,
+        }));
+      }
+
+      components.push(comp);
+    }
   });
 
-  const lead = await searchLeadId({ id: data.lead_id });
+  components.forEach((item) => {
+    console.log(item);
+  });
+
+  const interpolateText = (text) => {
+    if (!text) return "";
+    if (!Array.isArray(data.variables)) return text;
+
+    return text.replace(/{{(\d+)}}/g, (_, index) => {
+      const i = parseInt(index) - 1; // {{1}} é o primeiro item do array
+      return data.variables[i] ?? "";
+    });
+  };
+
+  // Conteúdo para WebSocket já com variáveis aplicadas
+  const header = interpolateText(
+    templatefiltred.components.find((c) => c.type === "HEADER")?.text
+  );
+  const body = interpolateText(
+    templatefiltred.components.find((c) => c.type === "BODY")?.text
+  );
+  const footer = interpolateText(
+    templatefiltred.components.find((c) => c.type === "FOOTER")?.text
+  );
+
+  const content = [header, body, footer].filter(Boolean).join("\n\n");
+
+  const newData = { content, inbox: inbox.id, lead };
+  await messageService.saveMessageAndSendToClientWebSocket({ data: newData });
+  return;
 
   const response = await fetch(
     "https://graph.facebook.com/v22.0/" + inbox.phone_number_id + "/messages",
@@ -397,39 +452,18 @@ export const sendTemplateForClientNumber = async ({ data }) => {
         type: "template",
         template: {
           name: data.template_name,
-          language: {
-            code: data.template_language,
-          },
+          language: { code: data.template_language },
+          components,
         },
       }),
     }
   );
 
   if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data);
+    const errorData = await response.json();
+    throw new Error(JSON.stringify(errorData));
   }
 
-  const templates = await getAllTemplatesByUserId({ id: inbox.user_id });
-
-  const templatefiltred = templates.find(
-    (template) => template.name === data.template_name
-  );
-
-  const header =
-    templatefiltred.components.find((c) => c.type === "HEADER")?.text || "";
-  const body =
-    templatefiltred.components.find((c) => c.type === "BODY")?.text || "";
-  const footer =
-    templatefiltred.components.find((c) => c.type === "FOOTER")?.text || "";
-
-  const content = [header, body, footer].filter(Boolean).join("\n\n");
-
-  const newData = {
-    content,
-    inbox: inbox.id,
-    lead: lead,
-  };
-
-  await messageService.saveMessageAndSendToClientWebSocket({ data: newData });
+  // Conteúdo para WebSocket
+  // Função para substituir placeholders {{1}}, {{2}}, etc.
 };
