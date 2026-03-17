@@ -40,7 +40,7 @@ export const getAllTemplatesByUserId = async ({ id }) => {
       headers: {
         Authorization: "Bearer " + credentials?.token,
       },
-    }
+    },
   );
 
   const templatesData = await response.json();
@@ -62,7 +62,7 @@ export const createNewTemplate = async ({ data }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
-    }
+    },
   );
 
   const result = await response.json();
@@ -83,7 +83,7 @@ export const deleteTemplateById = async (templateId, name) => {
         Authorization: `${token}`,
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   const result = await response.json();
@@ -310,7 +310,7 @@ export const receiveMessages = async ({ inboxId, data }) => {
   }
 
   throw new Error(
-    "Message type is not supported, message type: " + messageType
+    "Message type is not supported, message type: " + messageType,
   );
 };
 
@@ -366,7 +366,7 @@ export const sendMessageWith24HoursContext = async ({
           body: text,
         },
       }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -379,24 +379,52 @@ export const sendTemplateForClientNumber = async ({ data }) => {
   const credential = await getCredentialByUserId({ userId: inbox.user_id });
   const lead = await searchLeadId({ id: data.lead_id });
 
-  // Pega todos os templates do usuário
   const templates = await getAllTemplatesByUserId({ id: inbox.user_id });
 
-  const templatefiltred = templates.find(
-    (template) => template.name === data.template_name
-  );
+  const template = templates.find((t) => t.name === data.template_name);
 
-  if (!templatefiltred) throw new Error("Template não encontrado");
+  if (!template) {
+    throw new Error("Template não encontrado");
+  }
 
-  // Monta componentes: body, header, footer
   const components = [];
 
-  templatefiltred.components.forEach((c) => {
-    if (c.type === "BODY" || c.type === "HEADER" || c.type === "FOOTER") {
-      const comp = { type: c.type.toLowerCase() }; // "body", "header", "footer"
+  for (const c of template.components) {
+    // ================= HEADER =================
+    if (c.type === "HEADER") {
+      if (c.format === "TEXT") {
+        const comp = { type: "header" };
 
-      // Se o componente tem variáveis, adiciona os parâmetros
-      if (c.text.includes("{{") && Array.isArray(data.variables)) {
+        if (c.text?.includes("{{") && Array.isArray(data.variables)) {
+          comp.parameters = data.variables.map((v) => ({
+            type: "text",
+            text: v,
+          }));
+        }
+
+        components.push(comp);
+      }
+
+      if (c.format === "IMAGE" && data.image_url) {
+        components.push({
+          type: "header",
+          parameters: [
+            {
+              type: "image",
+              image: {
+                link: data.image_url,
+              },
+            },
+          ],
+        });
+      }
+    }
+
+    // ================= BODY =================
+    if (c.type === "BODY") {
+      const comp = { type: "body" };
+
+      if (c.text?.includes("{{") && Array.isArray(data.variables)) {
         comp.parameters = data.variables.map((v) => ({
           type: "text",
           text: v,
@@ -405,45 +433,93 @@ export const sendTemplateForClientNumber = async ({ data }) => {
 
       components.push(comp);
     }
-  });
 
-  components.forEach((item) => {
-    console.log(item);
-  });
+    // ================= FOOTER =================
+    if (c.type === "FOOTER") {
+      components.push({ type: "footer" });
+    }
 
+    // ================= BUTTONS =================
+    if (c.type === "BUTTONS" && Array.isArray(c.buttons)) {
+      c.buttons.forEach((btn, index) => {
+        // URL button — só envia parâmetro se a URL tiver variável dinâmica
+        if (btn.type === "URL" && btn.url?.includes("{{")) {
+          components.push({
+            type: "button",
+            sub_type: "url",
+            index: index.toString(),
+            parameters: [
+              {
+                type: "text",
+                text: btn.url,
+              },
+            ],
+          });
+        }
+
+        // FLOW button
+        if (btn.type === "FLOW") {
+          components.push({
+            type: "button",
+            sub_type: "flow",
+            index: index.toString(),
+            parameters: [
+              {
+                type: "action",
+                action: {
+                  flow_token: "unused",
+                },
+              },
+            ],
+          });
+        }
+      });
+    }
+  }
+
+  // ================= DEBUG =================
+  console.log("Components enviados:", components);
+
+  // ================= WEBSOCKET MESSAGE =================
   const interpolateText = (text) => {
     if (!text) return "";
     if (!Array.isArray(data.variables)) return text;
 
     return text.replace(/{{(\d+)}}/g, (_, index) => {
-      const i = parseInt(index) - 1; // {{1}} é o primeiro item do array
+      const i = parseInt(index) - 1;
       return data.variables[i] ?? "";
     });
   };
 
-  // Conteúdo para WebSocket já com variáveis aplicadas
   const header = interpolateText(
-    templatefiltred.components.find((c) => c.type === "HEADER")?.text
+    template.components.find((c) => c.type === "HEADER")?.text,
   );
+
   const body = interpolateText(
-    templatefiltred.components.find((c) => c.type === "BODY")?.text
+    template.components.find((c) => c.type === "BODY")?.text,
   );
+
   const footer = interpolateText(
-    templatefiltred.components.find((c) => c.type === "FOOTER")?.text
+    template.components.find((c) => c.type === "FOOTER")?.text,
   );
 
   const content = [header, body, footer].filter(Boolean).join("\n\n");
 
-  const newData = { content, inbox: inbox.id, lead };
-  await messageService.saveMessageAndSendToClientWebSocket({ data: newData });
-  return;
+  const newData = {
+    content,
+    inbox: inbox.id,
+    lead,
+  };
 
+  await messageService.saveMessageAndSendToClientWebSocket({ data: newData });
+
+  // ================= SEND WHATSAPP =================
   const response = await fetch(
-    "https://graph.facebook.com/v22.0/" + inbox.phone_number_id + "/messages",
+    `https://graph.facebook.com/v22.0/${inbox.phone_number_id}/messages`,
     {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + credential.token,
+        Authorization: `Bearer ${credential.token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -452,11 +528,13 @@ export const sendTemplateForClientNumber = async ({ data }) => {
         type: "template",
         template: {
           name: data.template_name,
-          language: { code: data.template_language },
+          language: {
+            code: data.template_language,
+          },
           components,
         },
       }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -464,6 +542,9 @@ export const sendTemplateForClientNumber = async ({ data }) => {
     throw new Error(JSON.stringify(errorData));
   }
 
-  // Conteúdo para WebSocket
-  // Função para substituir placeholders {{1}}, {{2}}, etc.
+  const responseData = await response.json();
+
+  console.log("Mensagem enviada:", responseData);
+
+  return responseData;
 };
