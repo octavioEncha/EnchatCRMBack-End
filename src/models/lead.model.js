@@ -15,6 +15,15 @@ export const searchLeadPhone = async ({ phone, instance }) => {
   return data;
 };
 
+export const searchLeadByInstagramId = async ({ id }) => {
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*")
+    .eq("instagram_id", id)
+    .maybeSingle();
+  return data;
+};
+
 export const searchLeadId = async ({ id }) => {
   const { data, error } = await supabase
     .from("leads")
@@ -73,6 +82,39 @@ export const createLead = async ({ data }) => {
   }
 
   // retorno normal
+  return createNewLead;
+};
+
+export const createLeadByReceiveInstagramContent = async ({ data }) => {
+  const { data: createNewLead, error: errorInsert } = await supabase
+    .from("leads")
+    .insert([
+      {
+        user_id: data.user_id,
+        name: data.name,
+        avatar: data.avatar,
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        source: "crm",
+        lid: data.lid ?? null,
+        pipeline_id: data.pipeline_id ?? null,
+        company: data.company ?? null,
+        value: typeof data.value === "number" ? data.value : null,
+        notes: data.notes ?? null,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        lead_type: data?.lead_type || "lead",
+        instagram_id: data?.instagram_id,
+      },
+    ])
+    .select()
+    .maybeSingle();
+
+  if (errorInsert) {
+    console.error("Erro ao inserir lead:", errorInsert);
+    return;
+  }
+
+  console.log(createNewLead);
   return createNewLead;
 };
 

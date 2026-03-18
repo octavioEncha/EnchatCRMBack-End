@@ -148,7 +148,6 @@ export const deleteCredentialById = async ({ id }) => {
 //WEBHOOK
 
 export const setVerification = async ({ inboxId }) => {
-  console.log("WAP SERVICE");
   await setVerificationInInboxByMeta({ inboxId });
 };
 

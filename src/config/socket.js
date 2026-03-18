@@ -68,7 +68,23 @@ const initSocket = (io) => {
         // =====================================================
         if (inbox.provider === "whatsapp_official") {
           console.log(
-            `📱 Inbox ${sessionId} usa WhatsApp Oficial. Pulando Evolution API.`
+            `📱 Inbox ${sessionId} usa WhatsApp Oficial. Pulando Evolution API.`,
+          );
+
+          clearSessionInterval(sessionId);
+
+          socket.emit("session_connected", {
+            sessionId,
+            message: "✅ Sessão conectada via WhatsApp Oficial.",
+            provider: "whatsapp_official",
+          });
+
+          socket.emit("qrcode_clear", { sessionId });
+
+          return; // 🚨 IMPORTANTE: interrompe aqui
+        } else if (inbox.provider === "instagram") {
+          console.log(
+            `📱 Inbox ${sessionId} usa Instagram Oficial. Pulando Evolution API.`,
           );
 
           clearSessionInterval(sessionId);
@@ -96,7 +112,7 @@ const initSocket = (io) => {
               "Content-Type": "application/json",
               apikey: API_KEY,
             },
-          }
+          },
         );
 
         const checkData = await checkResponse.json();
@@ -130,7 +146,7 @@ const initSocket = (io) => {
                   events: ["MESSAGES_UPSERT"],
                 },
               }),
-            }
+            },
           );
 
           const createData = await createResponse.json();
@@ -161,7 +177,7 @@ const initSocket = (io) => {
                     "Content-Type": "application/json",
                     apikey: API_KEY,
                   },
-                }
+                },
               );
 
               const qrData = await qrResponse.json();
@@ -205,7 +221,7 @@ const initSocket = (io) => {
                       "Content-Type": "application/json",
                       apikey: API_KEY,
                     },
-                  }
+                  },
                 );
 
                 const recreateData = await recreateResponse.json();
@@ -247,7 +263,7 @@ const initSocket = (io) => {
                 "Content-Type": "application/json",
                 apikey: API_KEY,
               },
-            }
+            },
           );
 
           const connectData = await connectResponse.json();

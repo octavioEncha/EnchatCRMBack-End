@@ -8,6 +8,8 @@ export const sendMessageToClientConnected = async ({
   instance,
   finalMessage,
 }) => {
+  console.log(finalMessage);
+
   const sessionId = instance;
 
   if (!sessionId || !sessions[sessionId]) {

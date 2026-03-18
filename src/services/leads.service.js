@@ -119,6 +119,10 @@ export const createNewLeadByAPIOficial = async ({ phone, name, instance }) => {
   return newLead;
 };
 
+export const createLeadByReceiveInstagramContent = async ({ data }) => {
+  return await leadModel.createLeadByReceiveInstagramContent({ data });
+};
+
 /* =====================================================
    CREATE NEW LEAD WITH PHOTO
    ===================================================== */
@@ -158,7 +162,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
         apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
       },
       body: JSON.stringify({ number: normalizedPhone }),
-    }
+    },
   );
 
   const profile = await response.json();
@@ -183,6 +187,10 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
   }
 
   return newLead;
+};
+
+export const searchLeadByInstagramId = async ({ id }) => {
+  return await leadModel.searchLeadByInstagramId({ id });
 };
 
 /* =====================================================
@@ -258,7 +266,7 @@ export const importLead = async ({ file, pipelineId }) => {
             apikey: "04e17cf6a68786ac0ff59bf9fcd81029",
           },
           body: JSON.stringify({ number: phone }),
-        }
+        },
       );
 
       profile = await response.json();
