@@ -3,6 +3,7 @@ export default class Inbox {
     id,
     user_id,
     phone_number_id,
+    instagram_token,
     provider,
     api_key,
     webhook_url,
@@ -21,6 +22,7 @@ export default class Inbox {
     this.id = id || null;
     this.user_id = user_id || null;
     this.phone_number_id = phone_number_id || null;
+    this.instagram_token = instagram_token || null;
 
     // Config
     this.provider = provider || null;
@@ -115,6 +117,7 @@ export default class Inbox {
       id: this.id,
       user_id: this.user_id,
       phone_number_id: this.phone_number_id,
+      instagram_token: this.instagram_token,
       provider: this.provider,
       webhook_url: this.webhook_url,
       name: this.name,

@@ -42,6 +42,7 @@ export const createInbox = async ({ data }) => {
   const inbox = new Inbox({
     user_id: data.user_id,
     phone_number_id: data.phone_number_id,
+    instagram_token: data.instagram_token,
     provider: data.provider,
     api_key: null,
     webhook_url: null,
@@ -60,11 +61,14 @@ export const createInbox = async ({ data }) => {
       inboxModel.createRelationOfferInbox({
         inbox_id: newInbox.id,
         offer_id: offer.id,
-      })
-    )
+      }),
+    ),
   );
 
-  if (inbox.provider === "whatsapp_official") {
+  if (
+    inbox.provider === "whatsapp_official" ||
+    inbox.provider === "instagram"
+  ) {
     newInbox.webhook_url =
       "https://api.enchat.in/wap-official/webhook/" + newInbox.id;
 
@@ -122,8 +126,8 @@ export const updateInboxById = async ({ id, data }) => {
         inboxModel.createRelationOfferInbox({
           inbox_id: id,
           offer_id: offer.id,
-        })
-      )
+        }),
+      ),
     );
   }
 

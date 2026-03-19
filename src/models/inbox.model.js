@@ -14,6 +14,7 @@ export const createInbox = async ({ data }) => {
     .insert({
       user_id: data.user_id,
       phone_number_id: data.phone_number_id,
+      instagram_token: data.instagram_token,
       provider: data.provider,
       name: data.name,
       prompt: data.prompt,
@@ -24,7 +25,7 @@ export const createInbox = async ({ data }) => {
       pipeline_id: data.pipeline_id,
     })
     .select()
-    .single(); // 👈 retorna apenas um objeto
+    .single();
 
   if (error) throw error;
 
@@ -107,7 +108,7 @@ export const listAllInboxesByUserId = async ({ id }) => {
           downsell:downsell_product_id ( name )
         )
       )
-    `
+    `,
     )
     .eq("user_id", id);
 
@@ -122,6 +123,7 @@ export const updateInboxById = async ({ id, data }) => {
     .update({
       name: data.name,
       phone_number_id: data.phone_number_id,
+      instagram_token: data.instagram_token,
       prompt: data.prompt,
       api_key: data.api_key,
       webhook_url: data.webhook_url,
