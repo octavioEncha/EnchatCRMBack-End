@@ -94,7 +94,7 @@ export const createLeadByReceiveInstagramContent = async ({ data }) => {
         name: data.name,
         avatar: data.avatar,
         email: data.email ?? null,
-        phone: data.phone ?? null,
+        phone: null,
         source: "crm",
         lid: data.lid ?? null,
         pipeline_id: data.pipeline_id ?? null,

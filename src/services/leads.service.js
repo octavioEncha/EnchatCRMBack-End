@@ -120,6 +120,7 @@ export const createNewLeadByAPIOficial = async ({ phone, name, instance }) => {
 };
 
 export const createLeadByReceiveInstagramContent = async ({ data }) => {
+  console.log(data);
   return await leadModel.createLeadByReceiveInstagramContent({ data });
 };
 
