@@ -14,7 +14,7 @@ import {
   ensureContact,
   saveMessage,
 } from "../services/session.service.js";
-import { text } from "express";
+import * as instaService from "./insta-oficial.service.js";
 import { getInboxById } from "../models/inbox.model.js";
 
 /**
@@ -218,7 +218,7 @@ export const createNewMessage = async ({ data, instance }) => {
             number: lead.phone,
             text: aiResponse.output,
           }),
-        }
+        },
       );
 
       // ==============================
@@ -302,7 +302,7 @@ export const createMessageForShootingToLead = async ({
 
     console.log(
       "✅ Mensagem criada via Disparo do CRM:",
-      createMessageForShootingToLead.content
+      createMessageForShootingToLead.content,
     );
     return { lead, conversation, message: createMessageForShootingToLead };
   } catch (err) {
@@ -355,6 +355,13 @@ export const createNewMessageSendCRM = async ({
         inbox,
         userId: inbox.user_id,
         phone: lead.phone,
+        text: content,
+      });
+    } else {
+      await instaService.sendMessage({
+        inbox,
+        userId: inbox.user_id,
+        lead,
         text: content,
       });
     }
@@ -470,7 +477,7 @@ export const sendMessage = async ({ data }) => {
         number: searchLead.phone,
         text: data.content,
       }),
-    }
+    },
   );
 
   const dataResponse = await response.json();

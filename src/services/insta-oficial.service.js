@@ -17,7 +17,11 @@ import {
 
 import { sendMessageToClientConnected } from "./websocket.service.js";
 
-import { findInboxByIdOrThrow } from "../services/inbox.service.js";
+import {
+  findInboxByIdOrThrow,
+  setVerificationInInboxByMeta,
+  setInstagramIdByWebhookReceive,
+} from "../services/inbox.service.js";
 
 export const receiveMessageByWebhook = async ({ inbox_id, data }) => {
   const inbox = await findInboxByIdOrThrow({ id: inbox_id });
@@ -29,6 +33,9 @@ export const receiveMessageByWebhook = async ({ inbox_id, data }) => {
   //if (await messageService.verifyMessageById({ messageId })) return null;
 
   const pageId = value.id;
+
+  await setInstagramIdByWebhookReceive({ inboxId: inbox.id, id: pageId });
+
   const senderId = value.messaging[0].sender.id;
   const recipientId = value.messaging[0].recipient.id;
 
@@ -65,7 +72,6 @@ export const receiveMessageByWebhook = async ({ inbox_id, data }) => {
     });
   }
 
-  console.log("lead: ", lead);
   let conversation = await searchConversation({ lead_id: lead.id });
   if (!conversation) {
     conversation = await createNewConversation({
@@ -129,26 +135,34 @@ const getInformationsByInstagramId = async ({ id }) => {
   return data;
 };
 
-export const sendMessage = async ({ id }) => {
+export const sendMessage = async ({ inbox, userId, lead, text }) => {
+  console.log(inbox);
+  console.log(userId);
+  console.log(lead);
+  console.log(text);
+
   const response = await fetch(
-    "https://graph.instagram.com/v25.0/17841474804587777/messages",
+    `https://graph.instagram.com/v25.0/${inbox?.instagram_id}/messages`,
     {
       method: "POST",
       headers: {
-        Authorization:
-          "Bearer IGAANJmCZARxANBZAFpWQ0dwa2w3V3EwQ1MtQ0FVaE5PUHdvUHEyWVpRbFF6ZAlJKQXhGdmM2MHZAma1pHUmpJek9pMlNKSVV1WE40MjBqeFBkRnRpOWE3dFZAWQkhzQnBLNXpFQUo5VGtqc2ZASVVdiS2RmQVVIV0ZA3R0lrSkUyOTAyRQZDZD",
+        Authorization: `Bearer ${inbox.instagram_token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         recipient: {
-          id: "1718984142842029",
+          id: lead?.instagram_id,
         },
         message: {
-          text: "teste envio de mensagem",
+          text: text,
         },
       }),
     },
   );
 
   const data = await response.json();
+};
+
+export const setVerification = async ({ inboxId }) => {
+  await setVerificationInInboxByMeta({ inboxId });
 };

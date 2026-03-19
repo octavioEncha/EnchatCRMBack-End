@@ -161,11 +161,22 @@ export const deleteInboxById = async ({ id }) => {
 };
 
 export const setVerificationInInboxByMeta = async ({ inboxId }) => {
-  console.log("INBOX MODEL");
   const { error } = await supabase
     .from("integration_channels")
     .update({
       meta_verify: true,
+    })
+    .eq("id", inboxId);
+
+  if (error) throw error;
+  return true;
+};
+
+export const setInstagramIdByWebhookReceive = async ({ inboxId, id }) => {
+  const { error } = await supabase
+    .from("integration_channels")
+    .update({
+      instagram_id: id,
     })
     .eq("id", inboxId);
 

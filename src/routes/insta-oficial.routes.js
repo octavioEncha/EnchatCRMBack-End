@@ -5,4 +5,6 @@ const router = Router();
 
 router.post("/webhook/:id", insta_controller.receiveMessageByWebhook);
 
+router.get("/webhook/:id", insta_controller.verifyTokenByMeta);
+
 export default router;

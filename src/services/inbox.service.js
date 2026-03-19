@@ -65,12 +65,14 @@ export const createInbox = async ({ data }) => {
     ),
   );
 
-  if (
-    inbox.provider === "whatsapp_official" ||
-    inbox.provider === "instagram"
-  ) {
+  if (inbox.provider === "whatsapp_official") {
     newInbox.webhook_url =
       "https://api.enchat.in/wap-official/webhook/" + newInbox.id;
+
+    await inboxModel.updateInboxById({ id: newInbox.id, data: newInbox });
+  } else if (inbox.provider === "instagram") {
+    newInbox.webhook_url =
+      "https://api.enchat.in/insta-official/webhook/" + newInbox.id;
 
     await inboxModel.updateInboxById({ id: newInbox.id, data: newInbox });
   }
@@ -141,4 +143,8 @@ export const deleteInboxById = async ({ id }) => {
 
 export const setVerificationInInboxByMeta = async ({ inboxId }) => {
   return await inboxModel.setVerificationInInboxByMeta({ inboxId });
+};
+
+export const setInstagramIdByWebhookReceive = async ({ inboxId, id }) => {
+  return await inboxModel.setInstagramIdByWebhookReceive({ inboxId, id });
 };

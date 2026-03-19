@@ -10,3 +10,22 @@ export const receiveMessageByWebhook = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const verifyTokenByMeta = async (req, res) => {
+  try {
+    const inboxId = req.params.id;
+    const mode = req.query["hub.mode"];
+    const token = req.query["hub.verify_token"];
+    const challenge = req.query["hub.challenge"];
+
+    await insta_service.setVerification({ inboxId });
+
+    return res.status(200).send(challenge);
+  } catch (error) {
+    console.error("Erro na verificação Meta:", error);
+
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+};
