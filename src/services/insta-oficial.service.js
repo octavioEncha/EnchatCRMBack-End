@@ -30,7 +30,7 @@ export const receiveMessageByWebhook = async ({ inbox_id, data }) => {
 
   const messageId = value.messaging[0].message.mid;
 
-  //if (await messageService.verifyMessageById({ messageId })) return null;
+  if (await messageService.verifyMessageById({ messageId })) return null;
 
   const pageId = value.id;
 
