@@ -226,6 +226,7 @@ export const createNewMessage = async ({ data, instance }) => {
       // ==============================
 
       const aiSaved = await messageModel.createNewMessageSendCRM({
+        message_id: null,
         content: aiResponse.output,
         lead_id: lead.id,
         conversation_id: conversation.id,
@@ -343,6 +344,7 @@ export const createNewMessageSendCRM = async ({
 
       if (!conversation) throw new Error("Erro ao criar conversa");
     }
+    let id = "";
 
     if (inbox.provider === "whatsapp_n_official") {
       await evolutionService.sendMessageByPhoneNumberLead({
@@ -358,7 +360,7 @@ export const createNewMessageSendCRM = async ({
         text: content,
       });
     } else {
-      await instaService.sendMessage({
+      id = await instaService.sendMessage({
         inbox,
         userId: inbox.user_id,
         lead,
@@ -368,6 +370,7 @@ export const createNewMessageSendCRM = async ({
 
     // 💾 Salva no banco
     const createdMessage = await messageModel.createNewMessageSendCRM({
+      message_id: id,
       content,
       lead_id: lead.id,
       conversation_id: conversation.id,
@@ -413,6 +416,7 @@ export const saveMessageAndSendToClientWebSocket = async ({ data }) => {
   });
 
   const createdMessage = await messageModel.createNewMessageSendCRM({
+    message_id: null,
     content: data.content,
     lead_id: data.lead.id,
     conversation_id: conversation.id,
@@ -486,6 +490,7 @@ export const sendMessage = async ({ data }) => {
   }
 
   const createNewMessage = await messageModel.createNewMessageSendCRM({
+    message_id: null,
     content: data.content,
     lead_id: searchLead.id,
     conversation_id: searchConvers.id,

@@ -110,6 +110,7 @@ export const createMessageForShootingToLead = async ({
 };
 
 export const createNewMessageSendCRM = async ({
+  message_id,
   content,
   lead_id,
   conversation_id,
@@ -119,6 +120,7 @@ export const createNewMessageSendCRM = async ({
     .from("messages")
     .insert([
       {
+        message_id: message_id ? message_id : null,
         conversation_id: conversation_id,
         sender_type: senderType ? senderType : "user",
         sender_id: lead_id,
