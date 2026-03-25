@@ -61,7 +61,11 @@ const commentsInPost = async ({ inbox, data }) => {
 
   const commentId = entry.changes[0].value.id;
 
-  if (await instaOficialModel.searchCommentById({ id: commentId })) return null;
+  if (
+    (await instaOficialModel.searchCommentById({ id: commentId })) ||
+    (await instaOficialModel.searchReplyById({ id: commentId }))
+  )
+    return true;
 
   const pageId = entry.id;
 
@@ -384,7 +388,6 @@ export const replyCommentById = async ({ commentId, data }) => {
   );
 
   const dataResponse = await response.json();
-  console.log(dataResponse);
 
   if (!response.ok) {
     throw new Error("Ocorreu um erro ao enviar comentário.");
@@ -394,6 +397,7 @@ export const replyCommentById = async ({ commentId, data }) => {
     data: {
       id: comment.id,
       reply: data.reply_content,
+      comment_response_id: dataResponse.id,
     },
   });
 

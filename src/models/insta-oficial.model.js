@@ -22,6 +22,7 @@ export const saveReplyToCommentById = async ({ data }) => {
     .from("instagram_comments")
     .update({
       comment_response: data.reply,
+      comment_response_id: data.comment_response_id,
     })
     .eq("id", data.id)
     .maybeSingle();
@@ -34,6 +35,17 @@ export const searchCommentById = async ({ id }) => {
     .from("instagram_comments")
     .select("*")
     .eq("comment_id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return comment;
+};
+export const searchReplyById = async ({ id }) => {
+  const { data: comment, error } = await supabase
+    .from("instagram_comments")
+    .select("*")
+    .eq("comment_response_id", id)
     .maybeSingle();
 
   if (error) throw error;
