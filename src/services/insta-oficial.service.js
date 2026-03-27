@@ -128,15 +128,17 @@ const commentsInPost = async ({ inbox, data }) => {
       (item) => item.comment_target === commentText,
     );
 
-    await replyCommentById({
-      commentId,
-      data: {
-        reply_content: replyToSend[0].comment_reply,
-        send_to_dm: replyToSend[0].dm_reply ? true : false,
-        message_to_dm: replyToSend[0].dm_reply,
-        automation_message: true,
-      },
-    });
+    if (replyToSend.length > 0) {
+      await replyCommentById({
+        commentId,
+        data: {
+          reply_content: replyToSend[0].comment_reply,
+          send_to_dm: replyToSend[0].dm_reply ? true : false,
+          message_to_dm: replyToSend[0].dm_reply,
+          automation_message: true,
+        },
+      });
+    }
   }
 };
 
@@ -371,7 +373,12 @@ export const sendMessageAfterCommentInPost = async ({
     },
   );
 
+  if (!response.ok) {
+    throw new Error(await response.json());
+  }
   const data = await response.json();
+
+  console.log(data);
 
   return data.message_id;
 };
@@ -516,6 +523,9 @@ export const replyCommentById = async ({ commentId, data }) => {
   if (!comment) throw new Error("Comment not found by id");
   if (comment.comment_response) throw new Error("Comment already replied ");
 
+  const lead = await searchLeadId({ id: comment.lead_id });
+  const conversation = await searchConversation({ lead_id: lead.id });
+
   const inbox = await findInboxByIdOrThrow({ id: comment.inbox_id });
 
   const response = await fetch(
@@ -526,7 +536,7 @@ export const replyCommentById = async ({ commentId, data }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message: data.reply_content,
+        message: `@${lead.name} ${data.reply_content}`,
         access_token: inbox.instagram_token,
       }),
     },
@@ -549,9 +559,6 @@ export const replyCommentById = async ({ commentId, data }) => {
   });
 
   if (data.send_to_dm) {
-    const lead = await searchLeadId({ id: comment.lead_id });
-    const conversation = await searchConversation({ lead_id: lead.id });
-
     const messageId = await sendMessageAfterCommentInPost({
       inbox,
       comment_id: commentId,
