@@ -1,6 +1,7 @@
 import { supabase } from "../config/supabaseClient.js";
 
 export const createNewProduct = async ({ produto }) => {
+  console.log(produto);
   const { data: product, error } = await supabase
     .from("products")
     .insert({
@@ -19,7 +20,11 @@ export const createNewProduct = async ({ produto }) => {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.log("deu erro");
+    console.log(error);
+    throw error;
+  }
 
   const productId = product.id;
 

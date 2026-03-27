@@ -21,12 +21,10 @@ export const createNewProduct = async ({ data }) => {
     throw new Error("At least 3 FAQs are required");
   }
 
-  console.log(faqs.length);
-
   const produto = new Product({
     user_id: data.user_id,
     name: data.name,
-    description: data.describe, // ✅ corrigido
+    description: data.describe,
     price: data.price,
     stock: data.stock,
     repurchasePeriod: data.repurchasePeriod,
@@ -40,7 +38,7 @@ export const createNewProduct = async ({ data }) => {
   });
 
   const newProduct = await productModel.createNewProduct({ produto });
-
+  console.log("to aqui");
   if (produto.faqs?.length) {
     await productModel.createFaqForProduct({
       product_id: newProduct.id,
@@ -52,7 +50,8 @@ export const createNewProduct = async ({ data }) => {
 };
 
 export const listProductsByUserId = async ({ id }) => {
-  await findProfileById({ id });
+  console.log("profile " + id);
+  //await findProfileById({ id });
 
   const products = await productModel.listProductsByUserId({ id });
 

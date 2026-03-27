@@ -9,6 +9,7 @@ export const createNewProduct = async (req, res) => {
       message: "sucess",
     });
   } catch (error) {
+    console.log(error);
     res.status(400).json({ error: error.message });
   }
 };
