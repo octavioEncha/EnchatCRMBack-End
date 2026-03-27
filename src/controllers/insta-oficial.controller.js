@@ -44,6 +44,18 @@ export const getAllPostsByInboxId = async (req, res) => {
   }
 };
 
+export const getPostById = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const postWithComments = await insta_service.getPostWithCommentsById({
+      post_id: postId,
+    });
+    res.status(200).json(postWithComments);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 export const reloadAllPostByInboxId = async (req, res) => {
   try {
     const inbox_id = req.params.inboxId;

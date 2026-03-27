@@ -80,12 +80,19 @@ const commentsInPost = async ({ inbox, data }) => {
   let lead = await searchLeadByInstagramId({ id: senderId });
 
   if (!lead) {
+    const profile = await getInformationsByInstagramId({
+      instagram_token: inbox.instagram_token,
+      id: senderId,
+    });
+
     lead = await createLeadByReceiveInstagramContent({
       data: {
+        inbox,
         user_id: inbox?.user_id,
-        name: senderUsername,
-        avatar:
-          "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
+        name: profile.username,
+        avatar: profile?.profile_pic
+          ? profile?.profile_pic
+          : "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
         email: "",
         phone: "",
         lid: "",
@@ -96,6 +103,7 @@ const commentsInPost = async ({ inbox, data }) => {
         tags: "",
         lead_type: "lead",
         instagram_id: senderId,
+        is_follower: profile.is_user_follow_business,
       },
     });
   }
@@ -181,8 +189,9 @@ const messageInDmInstagram = async ({ inbox, data }) => {
       data: {
         user_id: inbox?.user_id,
         name: profile.username,
-        avatar:
-          "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
+        avatar: profile?.profile_pic
+          ? profile?.profile_pic
+          : "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
         email: "",
         phone: "",
         lid: "",
@@ -193,6 +202,7 @@ const messageInDmInstagram = async ({ inbox, data }) => {
         tags: "",
         lead_type: "lead",
         instagram_id: profile.id,
+        is_follower: profile.is_user_follow_business,
       },
     });
   }
@@ -388,9 +398,11 @@ export const setVerification = async ({ inboxId }) => {
 };
 
 const getInformationsByInstagramId = async ({ instagram_token, id }) => {
-  const response = await fetch(
-    `https://graph.instagram.com/v25.0/${id}?fields=id,username&access_token=${instagram_token}`,
-  );
+  const response = await fetch(`https://graph.instagram.com/v25.0/${id}`, {
+    headers: {
+      Authorization: `Bearer ${instagram_token}`,
+    },
+  });
 
   const data = await response.json();
 
@@ -415,6 +427,7 @@ export const getAllPostsByInboxId = async ({ inbox_id }) => {
   );
 
   const data = await response.json();
+
   const posts = data.data;
 
   await Promise.all(
@@ -438,6 +451,16 @@ export const getAllPostsByInboxId = async ({ inbox_id }) => {
   );
 
   return await instaOficialModel.findPostsByInboxId({ id: inbox.id });
+};
+
+export const getPostWithCommentsById = async ({ post_id }) => {
+  const post = await instaOficialModel.findPostById({ id: post_id });
+  if (!post) {
+    throw new Error("Post not found by id");
+  }
+  const comments = await getAllCommentsByPostId({ postId: post_id });
+
+  return { post, comments };
 };
 
 export const reloadAllPostByInboxId = async ({ inbox_id }) => {
@@ -583,7 +606,7 @@ export const replyCommentById = async ({ commentId, data }) => {
 
     await Promise.all([
       updateLastMessageTimestamp({ conversationId: conversation.id }),
-      updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
+      //updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
     ]);
 
     const now = new Date().toISOString();

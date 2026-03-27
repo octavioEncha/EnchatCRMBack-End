@@ -97,13 +97,14 @@ export const createLeadByReceiveInstagramContent = async ({ data }) => {
         phone: null,
         source: "crm",
         lid: data.lid ?? null,
-        pipeline_id: data.pipeline_id ?? null,
+        pipeline_id: data.pipeline_id,
         company: data.company ?? null,
         value: typeof data.value === "number" ? data.value : null,
         notes: data.notes ?? null,
         tags: Array.isArray(data.tags) ? data.tags : [],
         lead_type: data?.lead_type || "lead",
         instagram_id: data?.instagram_id,
+        is_follower: data?.is_follower ? data.is_follower : false,
       },
     ])
     .select()
@@ -114,7 +115,6 @@ export const createLeadByReceiveInstagramContent = async ({ data }) => {
     return;
   }
 
-  console.log(createNewLead);
   return createNewLead;
 };
 

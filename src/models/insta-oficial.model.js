@@ -88,9 +88,14 @@ export const findPostById = async ({ id }) => {
 export const findPostsByInboxId = async ({ id }) => {
   const { data: posts, error } = await supabase
     .from("instagram_posts")
-    .select("*")
+    .select(
+      `
+      *,
+      instagram_post_replys("*")
+    `,
+    )
     .eq("inbox_id", id)
-    .order("created_at", { ascending: false });
+    .order("timestamp", { ascending: false });
 
   if (error) throw error;
 
@@ -171,7 +176,7 @@ export const findCommentsByPostsId = async ({ id }) => {
     .select(
       `
       *,
-      leads (name)
+      leads (name, avatar, is_follower )
     `,
     )
     .eq("media_id", id)

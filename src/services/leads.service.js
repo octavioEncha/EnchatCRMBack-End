@@ -94,7 +94,7 @@ export const createNewLeadByAPIOficial = async ({ phone, name, instance }) => {
     return existingLead;
   }
 
-  const searchPipeline = await seachPipelineById({
+  const searchPipelineDefault = await seachPipelineById({
     id: searchInbox.pipeline_id,
   });
 
@@ -107,7 +107,7 @@ export const createNewLeadByAPIOficial = async ({ phone, name, instance }) => {
     phone: normalizedPhone,
     source: "crm",
     lid: normalizePhone,
-    pipeline_id: searchPipeline.id,
+    pipeline_id: searchPipelineDefault.id,
   };
 
   const newLead = await leadModel.createLead({ data: leadData });
@@ -120,7 +120,18 @@ export const createNewLeadByAPIOficial = async ({ phone, name, instance }) => {
 };
 
 export const createLeadByReceiveInstagramContent = async ({ data }) => {
-  console.log(data);
+  const searchInbox = await findInboxByIdOrThrow({ id: data.inbox.id });
+
+  if (!searchInbox) {
+    throw new Error("❌ Erro ao buscar canal");
+  }
+
+  const searchPipelineDefault = await seachPipelineById({
+    id: searchInbox.pipeline_id,
+  });
+
+  data.pipeline_id = searchPipelineDefault.id;
+
   return await leadModel.createLeadByReceiveInstagramContent({ data });
 };
 
@@ -150,7 +161,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
     return existingLead;
   }
 
-  const searchPipeline = await seachPipelineById({
+  const searchPipelineDefault = await seachPipelineById({
     id: searchInbox.pipeline_id,
   });
 
@@ -178,7 +189,7 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
     phone: normalizedPhone,
     source: "crm",
     lid,
-    pipeline_id: searchPipeline.id,
+    pipeline_id: searchPipelineDefault.id,
   };
 
   const newLead = await leadModel.createLead({ data: leadData });
@@ -202,8 +213,8 @@ export const importLead = async ({ file, pipelineId }) => {
     throw new Error("Arquivo inválido.");
   }
 
-  const searchPipeline = await seachPipelineById({ id: pipelineId });
-  const instance = searchPipeline.user_id;
+  const searchPipelineDefault = await seachPipelineById({ id: pipelineId });
+  const instance = searchPipelineDefault.user_id;
 
   const leadCount = await leadModel.countLeadsByUserId({ user_id: instance });
   const limit = Math.max(0, 1000 - leadCount.length);
@@ -313,8 +324,8 @@ export const importLead = async ({ file, pipelineId }) => {
    PREVIEW IMPORT LIMIT
    ===================================================== */
 export const previewImportLeads = async ({ id }) => {
-  const searchPipeline = await seachPipelineById({ id });
-  const instance = searchPipeline.user_id;
+  const searchPipelineDefault = await seachPipelineById({ id });
+  const instance = searchPipelineDefault.user_id;
 
   const leadCount = await leadModel.countLeadsByUserId({ user_id: instance });
 

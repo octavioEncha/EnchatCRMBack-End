@@ -14,6 +14,8 @@ router.get("/webhook/:id", insta_controller.verifyTokenByMeta);
 //POSTS
 router.get("/inboxes/:inboxId/posts", insta_controller.getAllPostsByInboxId);
 
+router.get("/posts/:postId/comments", insta_controller.getPostById);
+
 router.put("/inboxes/:inboxId/posts", insta_controller.reloadAllPostByInboxId);
 
 //REPLIES TO POSTS WITH COMMENTS TARGETS
