@@ -121,7 +121,23 @@ const commentsInPost = async ({ inbox, data }) => {
     },
   });
 
-  // TODO: salvar o comentário como mensagem se necessário
+  const repliesToPost = await getReplysToPostById({ postId: mediaId });
+
+  if (repliesToPost || repliesToPost.length > 0) {
+    const replyToSend = repliesToPost.filter(
+      (item) => item.comment_target === commentText,
+    );
+
+    await replyCommentById({
+      commentId,
+      data: {
+        reply_content: replyToSend[0].comment_reply,
+        send_to_dm: replyToSend[0].dm_reply ? true : false,
+        message_to_dm: replyToSend[0].dm_reply,
+        automation_message: true,
+      },
+    });
+  }
 };
 
 const messageInDmInstagram = async ({ inbox, data }) => {
@@ -355,6 +371,106 @@ export const getBase64ForMediaReceivesInInstagramWebhook = async ({ link }) => {
   return base64;
 };
 
+export const getAllPostsByInboxId = async ({ inbox_id }) => {
+  const inbox = await findInboxByIdOrThrow({ id: inbox_id });
+
+  const response = await fetch(
+    `https://graph.instagram.com/v25.0/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&limit=10&access_token=${inbox.instagram_token}`,
+  );
+
+  const data = await response.json();
+  const posts = data.data;
+
+  await Promise.all(
+    posts.map(async (post) => {
+      const exists = await instaOficialModel.findPostById({ id: post.id });
+
+      if (!exists) {
+        await instaOficialModel.setPost({
+          data: {
+            inbox_id: inbox.id,
+            post_id: post.id,
+            caption: post.caption,
+            media_type: post.media_type,
+            media_url: post.media_url,
+            permalink: post.permalink,
+            timestamp: post.timestamp,
+          },
+        });
+      }
+    }),
+  );
+
+  return await instaOficialModel.findPostsByInboxId({ id: inbox.id });
+};
+
+export const reloadAllPostByInboxId = async ({ inbox_id }) => {
+  const inbox = await findInboxByIdOrThrow({ id: inbox_id });
+
+  await instaOficialModel.deleteAllPostByInboxId({ id: inbox.id });
+
+  await getAllPostsByInboxId({ inbox_id: inbox.id });
+
+  return true;
+};
+
+export const createReplyToPost = async ({ postId, data }) => {
+  const post = await instaOficialModel.findPostById({ id: postId });
+
+  if (!post) throw new Error("Post not found by id");
+
+  data.post_id = post.id;
+
+  await instaOficialModel.createReplyToPost({
+    data,
+  });
+};
+
+export const getReplysToPostById = async ({ postId }) => {
+  const post = await instaOficialModel.findPostById({ id: postId });
+
+  if (!post) throw new Error("Post not found by id");
+
+  return await instaOficialModel.getReplysToPostById({ id: post.id });
+};
+
+export const updateReplyById = async ({ postId, replyId, data }) => {
+  if (!(await instaOficialModel.findPostById({ id: postId })))
+    throw new Error("Post not found by id");
+
+  const reply = await instaOficialModel.findReplyToPostByReplyId({
+    id: replyId,
+  });
+
+  if (!reply) throw new Error("Reply not found by id");
+
+  await instaOficialModel.updateReplyById({ id: reply.id, data });
+};
+
+export const deleteReplyById = async ({ postId, replyId }) => {
+  if (!(await instaOficialModel.findPostById({ id: postId })))
+    throw new Error("Post not found by id");
+
+  const reply = await instaOficialModel.findReplyToPostByReplyId({
+    id: replyId,
+  });
+
+  if (!reply) throw new Error("Reply not found by id");
+
+  return await instaOficialModel.deleteReplyById({ id: reply.id });
+};
+
+export const getAllCommentsByPostId = async ({ postId }) => {
+  if (!(await instaOficialModel.findPostById({ id: postId })))
+    throw new Error("Post not found by id");
+
+  const allComments = await instaOficialModel.findCommentsByPostsId({
+    id: postId,
+  });
+
+  return allComments;
+};
+
 export const getMediaPostById = async ({ instagram_token, media_id }) => {
   const response = await fetch(
     `https://graph.instagram.com/v25.0/${media_id}?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&access_token=${instagram_token}`,
@@ -396,7 +512,9 @@ export const replyCommentById = async ({ commentId, data }) => {
   await instaOficialModel.saveReplyToCommentById({
     data: {
       id: comment.id,
-      reply: data.reply_content,
+      reply: data.automation_message
+        ? "AUTOMATION " + data.reply_content
+        : data.reply_content,
       comment_response_id: dataResponse.id,
     },
   });
@@ -417,9 +535,11 @@ export const replyCommentById = async ({ commentId, data }) => {
         conversation_id: conversation.id,
         lead_id: lead.id,
         inbox: inbox.id,
-        senderType: "user",
+        senderType: data.automation_message ? "ai" : "user",
         mediaType: "text",
-        messageContent: data.message_to_dm,
+        messageContent: data.automation_message
+          ? data.message_to_dm
+          : data.message_to_dm,
         messageId,
       },
     });
@@ -451,29 +571,6 @@ export const replyCommentById = async ({ commentId, data }) => {
       },
     });
   }
-};
-
-export const getAllCommentsByInboxId = async ({ inbox_id }) => {
-  const inbox = await findInboxByIdOrThrow({ id: inbox_id });
-
-  const comments = await instaOficialModel.getAllCommentsByInboxId({
-    inbox_id: inbox.id,
-  });
-
-  const commentsWithMedia = await Promise.all(
-    comments.map(async (comment) => {
-      const mediaInstagram = await getMediaPostById({
-        instagram_token: inbox.instagram_token,
-        media_id: comment.media_id,
-      });
-      return {
-        ...comment,
-        mediaInstagram,
-      };
-    }),
-  );
-
-  return commentsWithMedia;
 };
 
 export const deleteCommentById = async ({ comment_id }) => {

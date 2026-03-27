@@ -34,10 +34,82 @@ export const verifyTokenByMeta = async (req, res) => {
   }
 };
 
-export const getAllCommentsByInboxId = async (req, res) => {
+export const getAllPostsByInboxId = async (req, res) => {
   try {
     const inbox_id = req.params.inboxId;
-    const comments = await insta_service.getAllCommentsByInboxId({ inbox_id });
+    const posts = await insta_service.getAllPostsByInboxId({ inbox_id });
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const reloadAllPostByInboxId = async (req, res) => {
+  try {
+    const inbox_id = req.params.inboxId;
+
+    await insta_service.reloadAllPostByInboxId({ inbox_id });
+
+    res.status(200).json({ message: "sucess" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const createReplyToPost = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const data = req.body;
+    await insta_service.createReplyToPost({ postId, data });
+    res.status(201).json({ message: "sucess" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const getReplysToPostById = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const replys = await insta_service.getReplysToPostById({ postId });
+    res.status(200).json(replys);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const updateReplyById = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const replyId = req.params.replyId;
+    const data = req.body;
+
+    await insta_service.updateReplyById({ postId, replyId, data });
+
+    res.status(200).json({ message: "sucess" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const deleteReplyById = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const replyId = req.params.replyId;
+
+    await insta_service.deleteReplyById({ postId, replyId });
+
+    res.status(200).json({ message: "sucess" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const getAllCommentsByPostId = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const comments = await insta_service.getAllCommentsByPostId({
+      postId,
+    });
 
     res.status(200).json({ comments });
   } catch (error) {

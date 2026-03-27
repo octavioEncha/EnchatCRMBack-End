@@ -53,20 +53,120 @@ export const searchReplyById = async ({ id }) => {
   return comment;
 };
 
-export const findCommentById = async ({ id }) => {
-  const { data: comment, error } = await supabase
-    .from("instagram_comments")
+export const setPost = async ({ data }) => {
+  const { data: post, error } = await supabase
+    .from("instagram_posts")
+    .insert({
+      inbox_id: data.inbox_id,
+      post_id: data.post_id,
+      caption: data.caption,
+      media_type: data.media_type,
+      media_url: data.media_url,
+      permalink: data.permalink,
+      timestamp: data.timestamp,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return post;
+};
+
+export const findPostById = async ({ id }) => {
+  const { data: post, error } = await supabase
+    .from("instagram_posts")
     .select("*")
-    .eq("comment_id", id)
+    .eq("post_id", id)
     .maybeSingle();
 
   if (error) throw error;
 
-  return comment;
+  return post;
 };
 
-export const getAllCommentsByInboxId = async ({ inbox_id }) => {
-  const { data, error } = await supabase
+export const findPostsByInboxId = async ({ id }) => {
+  const { data: posts, error } = await supabase
+    .from("instagram_posts")
+    .select("*")
+    .eq("inbox_id", id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return posts;
+};
+
+export const deleteAllPostByInboxId = async ({ id }) => {
+  const { data: posts, error } = await supabase
+    .from("instagram_posts")
+    .delete()
+    .eq("inbox_id", id);
+
+  if (error) throw error;
+
+  return posts;
+};
+
+export const createReplyToPost = async ({ data }) => {
+  const { error } = await supabase.from("instagram_post_replys").insert({
+    ...data,
+    post_id: data.post_id,
+  });
+
+  if (error) throw error;
+};
+
+export const getReplysToPostById = async ({ id }) => {
+  const { data: replies, error } = await supabase
+    .from("instagram_post_replys")
+    .select("*")
+    .eq("post_id", id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return replies;
+};
+
+export const findReplyToPostByReplyId = async ({ id }) => {
+  const { data: reply, error } = await supabase
+    .from("instagram_post_replys")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return reply;
+};
+
+export const updateReplyById = async ({ id, data }) => {
+  const { error } = await supabase
+    .from("instagram_post_replys")
+    .update({
+      ...data,
+    })
+    .eq("id", id);
+
+  if (error) throw error;
+
+  return true;
+};
+
+export const deleteReplyById = async ({ id }) => {
+  const { error } = await supabase
+    .from("instagram_post_replys")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
+
+  return true;
+};
+
+export const findCommentsByPostsId = async ({ id }) => {
+  const { data: comments, error } = await supabase
     .from("instagram_comments")
     .select(
       `
@@ -74,11 +174,26 @@ export const getAllCommentsByInboxId = async ({ inbox_id }) => {
       leads (name)
     `,
     )
-    .eq("inbox_id", inbox_id)
+    .eq("media_id", id)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data;
+
+  return comments;
+};
+
+export const findCommentById = async ({ id }) => {
+  console.log(id);
+  const { data: comment, error } = await supabase
+    .from("instagram_comments")
+    .select("*")
+    .eq("comment_id", id)
+    .maybeSingle();
+
+  console.log(error);
+  if (error) throw error;
+
+  return comment;
 };
 
 export const deleteCommentById = async ({ comment_id }) => {

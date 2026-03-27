@@ -3,6 +3,7 @@ import * as insta_controller from "../controllers/insta-oficial.controller.js";
 
 const router = Router();
 
+//WEBHOOK
 router.post(
   "/webhook/:id",
   insta_controller.receiveMessageAndCommentsByWebhook,
@@ -10,10 +11,25 @@ router.post(
 
 router.get("/webhook/:id", insta_controller.verifyTokenByMeta);
 
-router.get(
-  "/inboxes/:inboxId/comments",
-  insta_controller.getAllCommentsByInboxId,
+//POSTS
+router.get("/inboxes/:inboxId/posts", insta_controller.getAllPostsByInboxId);
+
+router.put("/inboxes/:inboxId/posts", insta_controller.reloadAllPostByInboxId);
+
+//REPLIES TO POSTS WITH COMMENTS TARGETS
+router.post("/posts/:postId/replies", insta_controller.createReplyToPost);
+
+router.get("/posts/:postId/replies", insta_controller.getReplysToPostById);
+
+router.put("/posts/:postId/replies/:replyId", insta_controller.updateReplyById);
+
+router.delete(
+  "/posts/:postId/replies/:replyId",
+  insta_controller.deleteReplyById,
 );
+
+//COMMENTS
+router.get("/posts/:postId/comments", insta_controller.getAllCommentsByPostId);
 
 router.post("/comments/:commentId/reply", insta_controller.replyCommentById);
 
