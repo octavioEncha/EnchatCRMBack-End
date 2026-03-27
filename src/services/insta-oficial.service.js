@@ -347,6 +347,35 @@ export const sendMessage = async ({ inbox, userId, lead, text }) => {
   return data.message_id;
 };
 
+export const sendMessageAfterCommentInPost = async ({
+  inbox,
+  comment_id,
+  text,
+}) => {
+  const response = await fetch(
+    `https://graph.instagram.com/v25.0/${inbox?.instagram_id}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${inbox.instagram_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        recipient: {
+          comment_id: comment_id,
+        },
+        message: {
+          text: text,
+        },
+      }),
+    },
+  );
+
+  const data = await response.json();
+
+  return data.message_id;
+};
+
 export const setVerification = async ({ inboxId }) => {
   await setVerificationInInboxByMeta({ inboxId });
 };
@@ -523,10 +552,9 @@ export const replyCommentById = async ({ commentId, data }) => {
     const lead = await searchLeadId({ id: comment.lead_id });
     const conversation = await searchConversation({ lead_id: lead.id });
 
-    const messageId = await sendMessage({
+    const messageId = await sendMessageAfterCommentInPost({
       inbox,
-      userId: null,
-      lead,
+      comment_id: commentId,
       text: data.message_to_dm,
     });
 
