@@ -552,7 +552,7 @@ export const replyCommentById = async ({ commentId, data }) => {
     data: {
       id: comment.id,
       reply: data.automation_message
-        ? "AUTOMATION " + data.reply_content
+        ? `AUTOMATION @${lead.name} ${data.reply_content}`
         : data.reply_content,
       comment_response_id: dataResponse.id,
     },
