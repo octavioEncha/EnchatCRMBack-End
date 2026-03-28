@@ -15,11 +15,12 @@ export const searchLeadPhone = async ({ phone, instance }) => {
   return data;
 };
 
-export const searchLeadByInstagramId = async ({ id }) => {
+export const searchLeadByInstagramId = async ({ instagramId, userId }) => {
   const { data, error } = await supabase
     .from("leads")
     .select("*")
-    .eq("instagram_id", id)
+    .eq("user_id", userId)
+    .eq("instagram_id", instagramId)
     .maybeSingle();
   return data;
 };

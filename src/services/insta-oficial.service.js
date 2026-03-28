@@ -77,7 +77,10 @@ const commentsInPost = async ({ inbox, data }) => {
 
   await setInstagramIdByWebhookReceive({ inboxId: inbox.id, id: pageId });
 
-  let lead = await searchLeadByInstagramId({ id: senderId });
+  let lead = await searchLeadByInstagramId({
+    instagram_id: senderId,
+    user_id: inbox.user_id,
+  });
 
   if (!lead) {
     const profile = await getInformationsByInstagramId({
@@ -89,7 +92,7 @@ const commentsInPost = async ({ inbox, data }) => {
       data: {
         inbox,
         user_id: inbox?.user_id,
-        name: profile.username,
+        name: senderUsername,
         avatar: profile?.profile_pic
           ? profile?.profile_pic
           : "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
@@ -103,17 +106,9 @@ const commentsInPost = async ({ inbox, data }) => {
         tags: "",
         lead_type: "lead",
         instagram_id: senderId,
-        is_follower: profile.is_user_follow_business,
-      },
-    });
-  }
-
-  let conversation = await searchConversation({ lead_id: lead.id });
-  if (!conversation) {
-    conversation = await createNewConversation({
-      data: {
-        inbox_id: inbox.id,
-        lead_id: lead.id,
+        is_follower: profile.is_user_follow_business
+          ? profile.is_user_follow_business
+          : false,
       },
     });
   }
@@ -176,7 +171,8 @@ const messageInDmInstagram = async ({ inbox, data }) => {
   const messageContent = value.messaging[0].message.text ?? "";
 
   let lead = await searchLeadByInstagramId({
-    id: recipientId === pageId ? senderId : recipientId,
+    instagram_id: recipientId === pageId ? senderId : recipientId,
+    user_id: inbox.user_id,
   });
 
   if (!lead) {
@@ -187,6 +183,7 @@ const messageInDmInstagram = async ({ inbox, data }) => {
 
     lead = await createLeadByReceiveInstagramContent({
       data: {
+        inbox,
         user_id: inbox?.user_id,
         name: profile.username,
         avatar: profile?.profile_pic
@@ -201,7 +198,7 @@ const messageInDmInstagram = async ({ inbox, data }) => {
         notes: "",
         tags: "",
         lead_type: "lead",
-        instagram_id: profile.id,
+        instagram_id: senderId,
         is_follower: profile.is_user_follow_business,
       },
     });
@@ -547,7 +544,6 @@ export const replyCommentById = async ({ commentId, data }) => {
   if (comment.comment_response) throw new Error("Comment already replied ");
 
   const lead = await searchLeadId({ id: comment.lead_id });
-  const conversation = await searchConversation({ lead_id: lead.id });
 
   const inbox = await findInboxByIdOrThrow({ id: comment.inbox_id });
 
@@ -582,6 +578,15 @@ export const replyCommentById = async ({ commentId, data }) => {
   });
 
   if (data.send_to_dm) {
+    let conversation = await searchConversation({ lead_id: lead.id });
+    if (!conversation) {
+      conversation = await createNewConversation({
+        data: {
+          inbox_id: inbox.id,
+          lead_id: lead.id,
+        },
+      });
+    }
     const messageId = await sendMessageAfterCommentInPost({
       inbox,
       comment_id: commentId,

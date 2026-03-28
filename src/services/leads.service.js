@@ -201,8 +201,11 @@ export const createNewLead = async ({ data, phone, instance, lid }) => {
   return newLead;
 };
 
-export const searchLeadByInstagramId = async ({ id }) => {
-  return await leadModel.searchLeadByInstagramId({ id });
+export const searchLeadByInstagramId = async ({ instagram_id, user_id }) => {
+  return await leadModel.searchLeadByInstagramId({
+    instagramId: instagram_id,
+    userId: user_id,
+  });
 };
 
 /* =====================================================
