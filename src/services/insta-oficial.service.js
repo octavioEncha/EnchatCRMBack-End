@@ -181,6 +181,8 @@ const messageInDmInstagram = async ({ inbox, data }) => {
       id: recipientId === pageId ? senderId : recipientId,
     });
 
+    console.log("Profile do Instagram", profile);
+
     lead = await createLeadByReceiveInstagramContent({
       data: {
         inbox,
