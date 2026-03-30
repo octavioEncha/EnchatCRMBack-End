@@ -422,7 +422,7 @@ export const getAllPostsByInboxId = async ({ inbox_id }) => {
   const inbox = await findInboxByIdOrThrow({ id: inbox_id });
 
   const response = await fetch(
-    `https://graph.instagram.com/v25.0/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&limit=10&access_token=${inbox.instagram_token}`,
+    `https://graph.instagram.com/v25.0/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&limit=100&access_token=${inbox.instagram_token}`,
   );
 
   const data = await response.json();
