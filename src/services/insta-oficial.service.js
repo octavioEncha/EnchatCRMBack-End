@@ -187,7 +187,7 @@ const messageInDmInstagram = async ({ inbox, data }) => {
       data: {
         inbox,
         user_id: inbox?.user_id,
-        name: profile.username,
+        name: profile.username || "Instagram User",
         avatar: profile?.profile_pic
           ? profile?.profile_pic
           : "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
