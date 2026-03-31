@@ -26,7 +26,7 @@ import * as instaOficialModel from "../models/insta-oficial.model.js";
 const DEFAULT_AVATAR =
   "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const buildLeadPayload = ({
   inbox,
@@ -60,7 +60,6 @@ const buildWebsocketPayload = ({
   text,
   mediaUrl,
   mediaType,
-  inbox,
 }) => {
   const now = new Date().toISOString();
   return {
@@ -80,43 +79,76 @@ const buildWebsocketPayload = ({
   };
 };
 
-const getOrCreateLead = async ({ instagram_id, inbox, fallbackName }) => {
-  let lead = await searchLeadByInstagramId({
+/**
+ * Busca o perfil do Instagram de forma segura.
+ * Retorna {} se o perfil for privado, sem consentimento (code 230),
+ * ou qualquer outro erro da API / rede.
+ */
+const getInstagramProfile = async ({ instagram_token, id }) => {
+  try {
+    const response = await fetch(`https://graph.instagram.com/v25.0/${id}`, {
+      headers: { Authorization: `Bearer ${instagram_token}` },
+    });
+
+    const json = await response.json();
+
+    if (json?.error) {
+      console.warn(
+        `Perfil Instagram indisponível para ${id} (code ${json.error.code}): ${json.error.message}`,
+      );
+      return {};
+    }
+
+    return json;
+  } catch (err) {
+    console.warn(`Erro de rede ao buscar perfil Instagram ${id}:`, err.message);
+    return {};
+  }
+};
+
+/**
+ * Busca ou cria um lead pelo instagram_id.
+ * Usa os dados do webhook como fallback quando o perfil não está acessível.
+ */
+const getOrCreateLead = async ({
+  instagram_id,
+  inbox,
+  fallbackName,
+  fallbackAvatar,
+}) => {
+  const existing = await searchLeadByInstagramId({
     instagram_id,
     user_id: inbox.user_id,
   });
 
-  if (!lead) {
-    const profile = await getInformationsByInstagramId({
-      instagram_token: inbox.instagram_token,
-      id: instagram_id,
-    });
+  if (existing) return existing;
 
-    lead = await createLeadByReceiveInstagramContent({
-      data: buildLeadPayload({
-        inbox,
-        name: profile?.username || fallbackName || "Instagram User",
-        avatar: profile?.profile_pic,
-        instagram_id,
-        is_follower: profile?.is_user_follow_business,
-      }),
-    });
-  }
+  const profile = await getInstagramProfile({
+    instagram_token: inbox.instagram_token,
+    id: instagram_id,
+  });
 
-  return lead;
+  return createLeadByReceiveInstagramContent({
+    data: buildLeadPayload({
+      inbox,
+      name: profile?.username || fallbackName || `instagram_${instagram_id}`,
+      avatar: profile?.profile_pic || fallbackAvatar || DEFAULT_AVATAR,
+      instagram_id,
+      is_follower: profile?.is_user_follow_business ?? false,
+    }),
+  });
 };
 
 const getOrCreateConversation = async ({ inbox, lead }) => {
-  let conversation = await searchConversation({ lead_id: lead.id });
-  if (!conversation) {
-    conversation = await createNewConversation({
-      data: { inbox_id: inbox.id, lead_id: lead.id },
-    });
-  }
-  return conversation;
+  const existing = await searchConversation({ lead_id: lead.id });
+  if (existing) return existing;
+
+  return createNewConversation({
+    data: { inbox_id: inbox.id, lead_id: lead.id },
+  });
 };
 
-// ─── Webhook entry point ─────────────────────────────────────────────────────
+// ─── Webhook entry point ──────────────────────────────────────────────────────
 
 export const receiveMessageAndCommentsByWebhook = async ({
   inbox_id,
@@ -146,14 +178,14 @@ export const receiveMessageAndCommentsByWebhook = async ({
   return null;
 };
 
-// ─── Comments ────────────────────────────────────────────────────────────────
+// ─── Comments ─────────────────────────────────────────────────────────────────
 
 const commentsInPost = async ({ inbox, data }) => {
   const entry = data?.entry[0];
   const changeValue = entry.changes[0].value;
   const commentId = changeValue.id; // ID externo do Instagram
 
-  // Deduplicação: já processamos esse comentário/reply?
+  // Deduplicação — evita processar o mesmo evento duas vezes
   const [alreadyComment, alreadyReply] = await Promise.all([
     instaOficialModel.searchCommentById({ id: commentId }),
     instaOficialModel.searchReplyById({ id: commentId }),
@@ -171,10 +203,10 @@ const commentsInPost = async ({ inbox, data }) => {
   const lead = await getOrCreateLead({
     instagram_id: senderId,
     inbox,
-    fallbackName: senderUsername,
+    fallbackName: senderUsername, // username sempre vem no webhook de comentário
   });
 
-  // FIX: salva o comentário e usa o registro retornado (com ID interno)
+  // Salva o comentário e usa o registro retornado (ID interno do banco)
   const commentSaved = await instaOficialModel.saveComments({
     data: {
       inbox_id: inbox.id,
@@ -186,12 +218,12 @@ const commentsInPost = async ({ inbox, data }) => {
     },
   });
 
-  // FIX: condição corrigida de || para && (array vazio não deve disparar)
+  // Busca automações configuradas para este post
   let repliesToPost = [];
   try {
     repliesToPost = await getReplysToPostById({ postId: mediaId });
   } catch {
-    // Post pode não existir ainda no banco — ignora automação
+    // Post ainda não cadastrado no banco — sem automação, segue em frente
   }
 
   if (Array.isArray(repliesToPost) && repliesToPost.length > 0) {
@@ -200,7 +232,7 @@ const commentsInPost = async ({ inbox, data }) => {
     );
 
     if (replyToSend) {
-      // FIX: passa o ID interno do comentário salvo, não o ID externo do Instagram
+      // Usa o ID interno do comentário salvo, não o ID externo do Instagram
       await replyCommentById({
         commentId: commentSaved.id,
         data: {
@@ -214,7 +246,7 @@ const commentsInPost = async ({ inbox, data }) => {
   }
 };
 
-// ─── DM ──────────────────────────────────────────────────────────────────────
+// ─── DM ───────────────────────────────────────────────────────────────────────
 
 const messageInDmInstagram = async ({ inbox, data }) => {
   const entry = data?.entry[0];
@@ -238,12 +270,16 @@ const messageInDmInstagram = async ({ inbox, data }) => {
       : "text";
   const messageContent = messaging.message.text ?? "";
 
+  // DMs não trazem username no webhook — usa o ID como fallback
   const lead = await getOrCreateLead({
     instagram_id: leadInstagramId,
     inbox,
+    fallbackName: `instagram_${leadInstagramId}`,
   });
 
   const conversation = await getOrCreateConversation({ inbox, lead });
+
+  // ── Mensagem com mídia ───────────────────────────────────────────────────
 
   const MEDIA_TYPES = new Set([
     "sticker",
@@ -304,12 +340,13 @@ const messageInDmInstagram = async ({ inbox, data }) => {
         text: uploadUrl,
         mediaUrl: uploadUrl,
         mediaType: mimeTypeMap[messageType],
-        inbox,
       }),
     });
 
     return;
   }
+
+  // ── Mensagem de texto ────────────────────────────────────────────────────
 
   const createdNewMessage = await createMessage({
     data: {
@@ -338,12 +375,11 @@ const messageInDmInstagram = async ({ inbox, data }) => {
       lead,
       direction: fromMe === "lead" ? "incoming" : "outgoing",
       text: messageContent,
-      inbox,
     }),
   });
 };
 
-// ─── Send message ─────────────────────────────────────────────────────────────
+// ─── Send messages ────────────────────────────────────────────────────────────
 
 export const sendMessage = async ({ inbox, lead, text }) => {
   const response = await fetch(
@@ -371,8 +407,6 @@ export const sendMessage = async ({ inbox, lead, text }) => {
 };
 
 export const sendMessageAfterCommentInPost = async ({ inbox, lead, text }) => {
-  // FIX: DM após comentário deve ser enviada com o instagram_id do lead,
-  // não com o comment_id — a API Graph usa "id" do recipient para DMs
   const response = await fetch(
     `https://graph.instagram.com/v25.0/${inbox.instagram_id}/messages`,
     {
@@ -388,7 +422,6 @@ export const sendMessageAfterCommentInPost = async ({ inbox, lead, text }) => {
     },
   );
 
-  // FIX: checar ok ANTES de chamar response.json()
   if (!response.ok) {
     const err = await response.json();
     throw new Error(
@@ -405,19 +438,6 @@ export const setVerification = async ({ inboxId }) => {
 };
 
 // ─── Instagram Graph API helpers ──────────────────────────────────────────────
-
-const getInformationsByInstagramId = async ({ instagram_token, id }) => {
-  const response = await fetch(`https://graph.instagram.com/v25.0/${id}`, {
-    headers: { Authorization: `Bearer ${instagram_token}` },
-  });
-
-  if (!response.ok) {
-    console.error("Erro ao buscar perfil Instagram", await response.text());
-    return {};
-  }
-
-  return response.json();
-};
 
 export const getBase64ForMediaReceivesInInstagramWebhook = async ({ link }) => {
   const response = await fetch(link);
@@ -533,7 +553,7 @@ export const getMediaPostById = async ({ instagram_token, media_id }) => {
 };
 
 export const replyCommentById = async ({ commentId, data }) => {
-  // commentId aqui é o ID interno do banco (não o ID externo do Instagram)
+  // commentId = ID interno do banco (não o ID externo do Instagram)
   const comment = await instaOficialModel.findCommentById({ id: commentId });
   if (!comment) throw new Error("Comment not found by id");
   if (comment.comment_response) throw new Error("Comment already replied");
@@ -543,7 +563,7 @@ export const replyCommentById = async ({ commentId, data }) => {
     findInboxByIdOrThrow({ id: comment.inbox_id }),
   ]);
 
-  // Responde o comentário publicamente
+  // Responde publicamente no comentário
   const replyResponse = await fetch(
     `https://graph.instagram.com/v25.0/${comment.comment_id}/replies`,
     {
@@ -556,7 +576,6 @@ export const replyCommentById = async ({ commentId, data }) => {
     },
   );
 
-  // FIX: checar ok ANTES de chamar .json()
   if (!replyResponse.ok) {
     const err = await replyResponse.json();
     throw new Error(`Erro ao enviar comentário: ${JSON.stringify(err)}`);
@@ -578,7 +597,6 @@ export const replyCommentById = async ({ commentId, data }) => {
   if (data.send_to_dm && data.message_to_dm) {
     const conversation = await getOrCreateConversation({ inbox, lead });
 
-    // FIX: passa lead para usar instagram_id correto no recipient
     const messageId = await sendMessageAfterCommentInPost({
       inbox,
       lead,
@@ -612,7 +630,6 @@ export const replyCommentById = async ({ commentId, data }) => {
         lead,
         direction: "outgoing",
         text: data.message_to_dm,
-        inbox,
       }),
     });
   }
