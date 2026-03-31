@@ -83,29 +83,16 @@ const commentsInPost = async ({ inbox, data }) => {
   });
 
   if (!lead) {
-    // Tentar obter informações do perfil. Lidar com perfis privados/não seguidores.
-    let profile = {};
-    try {
-      profile = await getInformationsByInstagramId({
-        instagram_token: inbox.instagram_token,
-        id: senderId,
-      });
-    } catch (error) {
-      console.warn(
-        `Não foi possível obter informações detalhadas para o usuário ${senderId}: ${error.message}`,
-      );
-      // Definir valores padrão ou lidar com o erro de forma apropriada
-      profile.username = senderUsername; // Usar o username do comentário como fallback
-      profile.profile_pic =
-        "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png";
-      profile.is_user_follow_business = false;
-    }
+    const profile = await getInformationsByInstagramId({
+      instagram_token: inbox.instagram_token,
+      id: senderId,
+    });
 
     lead = await createLeadByReceiveInstagramContent({
       data: {
         inbox,
         user_id: inbox?.user_id,
-        name: profile.username || senderUsername || "Instagram User",
+        name: senderUsername,
         avatar: profile?.profile_pic
           ? profile?.profile_pic
           : "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
@@ -139,8 +126,7 @@ const commentsInPost = async ({ inbox, data }) => {
 
   const repliesToPost = await getReplysToPostById({ postId: mediaId });
 
-  // Corrigido: Verificar se repliesToPost é um array e tem elementos
-  if (repliesToPost && repliesToPost.length > 0) {
+  if (repliesToPost || repliesToPost.length > 0) {
     const replyToSend = repliesToPost.filter(
       (item) => item.comment_target === commentText,
     );
@@ -190,21 +176,10 @@ const messageInDmInstagram = async ({ inbox, data }) => {
   });
 
   if (!lead) {
-    let profile = {};
-    try {
-      profile = await getInformationsByInstagramId({
-        instagram_token: inbox.instagram_token,
-        id: recipientId === pageId ? senderId : recipientId,
-      });
-    } catch (error) {
-      console.warn(
-        `Não foi possível obter informações detalhadas para o usuário ${senderId}: ${error.message}`,
-      );
-      profile.username = "Instagram User";
-      profile.profile_pic =
-        "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png";
-      profile.is_user_follow_business = false;
-    }
+    const profile = await getInformationsByInstagramId({
+      instagram_token: inbox.instagram_token,
+      id: recipientId === pageId ? senderId : recipientId,
+    });
 
     console.log("Profile do Instagram", profile);
 
@@ -225,7 +200,7 @@ const messageInDmInstagram = async ({ inbox, data }) => {
         notes: "",
         tags: "",
         lead_type: "lead",
-        instagram_id: recipientId === pageId ? senderId : recipientId,
+        instagram_id: senderId,
         is_follower: profile.is_user_follow_business,
       },
     });
@@ -358,12 +333,7 @@ const messageInDmInstagram = async ({ inbox, data }) => {
   return;
 };
 
-export const sendMessage = async ({ inbox, leadId, text }) => {
-  const lead = await searchLeadId({ id: leadId });
-  if (!lead || !lead.instagram_id) {
-    throw new Error("Lead ou Instagram ID não encontrado.");
-  }
-
+export const sendMessage = async ({ inbox, userId, lead, text }) => {
   const response = await fetch(
     `https://graph.instagram.com/v25.0/${inbox?.instagram_id}/messages`,
     {
@@ -374,7 +344,7 @@ export const sendMessage = async ({ inbox, leadId, text }) => {
       },
       body: JSON.stringify({
         recipient: {
-          id: lead.instagram_id,
+          id: lead?.instagram_id,
         },
         message: {
           text: text,
@@ -385,26 +355,14 @@ export const sendMessage = async ({ inbox, leadId, text }) => {
 
   const data = await response.json();
 
-  if (!response.ok) {
-    console.error("Erro ao enviar DM:", data);
-    throw new Error(data.error?.message || "Erro desconhecido ao enviar DM.");
-  }
-
   return data.message_id;
 };
 
 export const sendMessageAfterCommentInPost = async ({
   inbox,
-  leadId,
+  comment_id,
   text,
 }) => {
-  const lead = await searchLeadId({ id: leadId });
-  if (!lead || !lead.instagram_id) {
-    throw new Error("Lead ou Instagram ID não encontrado.");
-  }
-
-  // Corrigido: O endpoint para enviar DM é o mesmo, o que muda é o recipient.
-  // Não se usa comment_id para enviar DM, mas sim o ID do usuário (lead.instagram_id).
   const response = await fetch(
     `https://graph.instagram.com/v25.0/${inbox?.instagram_id}/messages`,
     {
@@ -415,7 +373,7 @@ export const sendMessageAfterCommentInPost = async ({
       },
       body: JSON.stringify({
         recipient: {
-          id: lead.instagram_id, // Usar o ID do lead para enviar a DM
+          comment_id: comment_id,
         },
         message: {
           text: text,
@@ -425,12 +383,7 @@ export const sendMessageAfterCommentInPost = async ({
   );
 
   if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Erro ao enviar DM após comentário:", errorData);
-    throw new Error(
-      errorData.error?.message ||
-        "Ocorreu um erro ao enviar DM após comentário.",
-    );
+    throw new Error(await response.json());
   }
   const data = await response.json();
 
@@ -444,40 +397,19 @@ export const setVerification = async ({ inboxId }) => {
 };
 
 const getInformationsByInstagramId = async ({ instagram_token, id }) => {
-  const response = await fetch(
-    `https://graph.instagram.com/v25.0/${id}?fields=username,profile_picture_url,follows_count,followed_by_count,is_private,is_verified,biography,website,media_count&access_token=${instagram_token}`,
-    {
-      headers: {
-        Authorization: `Bearer ${instagram_token}`,
-      },
+  const response = await fetch(`https://graph.instagram.com/v25.0/${id}`, {
+    headers: {
+      Authorization: `Bearer ${instagram_token}`,
     },
-  );
+  });
 
   const data = await response.json();
-
-  if (!response.ok) {
-    // Lidar com erros da API, como permissões insuficientes para perfis privados
-    console.error("Erro ao obter informações do Instagram:", data);
-    throw new Error(
-      data.error?.message ||
-        "Não foi possível obter informações do perfil do Instagram.",
-    );
-  }
-
-  // Adicionar um campo para indicar se o usuário segue a empresa, se possível
-  // Esta informação geralmente não está disponível diretamente na API de perfil de usuário genérica
-  // Seria necessário usar o endpoint de "followers" da conta comercial, se disponível e com permissão.
-  data.is_user_follow_business = false; // Valor padrão
 
   return data;
 };
 
 export const getBase64ForMediaReceivesInInstagramWebhook = async ({ link }) => {
   const response = await fetch(link);
-
-  if (!response.ok) {
-    throw new Error(`Falha ao buscar mídia: ${response.statusText}`);
-  }
 
   const buffer = await response.arrayBuffer();
 
@@ -492,14 +424,6 @@ export const getAllPostsByInboxId = async ({ inbox_id }) => {
   const response = await fetch(
     `https://graph.instagram.com/v25.0/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&limit=100&access_token=${inbox.instagram_token}`,
   );
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Erro ao obter posts do Instagram:", errorData);
-    throw new Error(
-      errorData.error?.message || "Não foi possível obter posts do Instagram.",
-    );
-  }
 
   const data = await response.json();
 
@@ -610,14 +534,6 @@ export const getMediaPostById = async ({ instagram_token, media_id }) => {
     `https://graph.instagram.com/v25.0/${media_id}?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&access_token=${instagram_token}`,
   );
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Erro ao obter mídia do post:", errorData);
-    throw new Error(
-      errorData.error?.message || "Não foi possível obter mídia do post.",
-    );
-  }
-
   const data = await response.json();
 
   return data;
@@ -633,9 +549,6 @@ export const replyCommentById = async ({ commentId, data }) => {
 
   const inbox = await findInboxByIdOrThrow({ id: comment.inbox_id });
 
-  // Corrigido: O username deve ser obtido do lead para garantir que é o correto para a menção.
-  const usernameToMention = lead.name; // Assumindo que lead.name é o username do Instagram
-
   const response = await fetch(
     `https://graph.instagram.com/v25.0/${comment.comment_id}/replies`,
     {
@@ -644,7 +557,7 @@ export const replyCommentById = async ({ commentId, data }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message: `@${usernameToMention} ${data.reply_content}`,
+        message: `@${lead.name} ${data.reply_content}`,
         access_token: inbox.instagram_token,
       }),
     },
@@ -653,17 +566,14 @@ export const replyCommentById = async ({ commentId, data }) => {
   const dataResponse = await response.json();
 
   if (!response.ok) {
-    console.error("Erro ao enviar comentário:", dataResponse);
-    throw new Error(
-      dataResponse.error?.message || "Ocorreu um erro ao enviar comentário.",
-    );
+    throw new Error("Ocorreu um erro ao enviar comentário.");
   }
 
   await instaOficialModel.saveReplyToCommentById({
     data: {
       id: comment.id,
       reply: data.automation_message
-        ? `AUTOMATION @${usernameToMention} ${data.reply_content}`
+        ? `AUTOMATION @${lead.name} ${data.reply_content}`
         : data.reply_content,
       comment_response_id: dataResponse.id,
     },
@@ -679,10 +589,9 @@ export const replyCommentById = async ({ commentId, data }) => {
         },
       });
     }
-    // Corrigido: Chamar sendMessageAfterCommentInPost com leadId em vez de comment_id
     const messageId = await sendMessageAfterCommentInPost({
       inbox,
-      leadId: lead.id, // Passar o ID do lead
+      comment_id: commentId,
       text: data.message_to_dm,
     });
 
@@ -693,7 +602,9 @@ export const replyCommentById = async ({ commentId, data }) => {
         inbox: inbox.id,
         senderType: data.automation_message ? "ai" : "user",
         mediaType: "text",
-        messageContent: data.message_to_dm,
+        messageContent: data.automation_message
+          ? data.message_to_dm
+          : data.message_to_dm,
         messageId,
       },
     });
@@ -702,7 +613,7 @@ export const replyCommentById = async ({ commentId, data }) => {
 
     await Promise.all([
       updateLastMessageTimestamp({ conversationId: conversation.id }),
-      //updateLastMessageInboundTimestamp({ conversationId: conversation.id }), // Esta linha estava comentada, mantida assim.
+      //updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
     ]);
 
     const now = new Date().toISOString();
@@ -745,11 +656,7 @@ export const deleteCommentById = async ({ comment_id }) => {
   );
 
   if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Erro ao deletar comentário:", errorData);
-    throw new Error(
-      errorData.error?.message || "The comment could not be deleted.",
-    );
+    throw new Error("The comment could not be deleted. ");
   }
 
   await instaOficialModel.deleteCommentById({ comment_id });
