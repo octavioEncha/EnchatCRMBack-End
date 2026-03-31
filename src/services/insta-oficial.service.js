@@ -8,16 +8,13 @@ import {
   searchConversation,
   createNewConversation,
 } from "./conversation.service.js";
-
 import {
   createMessage,
   updateLastMessageTimestamp,
   updateLastMessageInboundTimestamp,
   createMessageWithAttachment,
 } from "../models/message.model.js";
-
 import { sendMessageToClientConnected } from "./websocket.service.js";
-
 import {
   findInboxByIdOrThrow,
   setVerificationInInboxByMeta,
@@ -26,17 +23,110 @@ import {
 import { uploadAttachment } from "../models/attachments.model.js";
 import * as instaOficialModel from "../models/insta-oficial.model.js";
 
+const DEFAULT_AVATAR =
+  "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png";
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const buildLeadPayload = ({
+  inbox,
+  name,
+  avatar,
+  instagram_id,
+  is_follower,
+}) => ({
+  inbox,
+  user_id: inbox.user_id,
+  name,
+  avatar: avatar || DEFAULT_AVATAR,
+  email: "",
+  phone: "",
+  lid: "",
+  pipeline_id: null,
+  company: "",
+  value: "",
+  notes: "",
+  tags: "",
+  lead_type: "lead",
+  instagram_id,
+  is_follower: is_follower ?? false,
+});
+
+const buildWebsocketPayload = ({
+  message,
+  conversation,
+  lead,
+  direction,
+  text,
+  mediaUrl,
+  mediaType,
+  inbox,
+}) => {
+  const now = new Date().toISOString();
+  return {
+    id: message.id,
+    conversation_id: conversation.id,
+    lead_id: lead.id,
+    inbox_provider: "instagram",
+    direction,
+    text,
+    ...(mediaUrl && { mediaUrl, mediaType }),
+    timestamp: now,
+    contact: lead.instagram_id,
+    last_inbound_message_at: now,
+    user: lead.name,
+    avatar: lead.avatar,
+    ai_enabled: conversation.ai_enabled,
+  };
+};
+
+const getOrCreateLead = async ({ instagram_id, inbox, fallbackName }) => {
+  let lead = await searchLeadByInstagramId({
+    instagram_id,
+    user_id: inbox.user_id,
+  });
+
+  if (!lead) {
+    const profile = await getInformationsByInstagramId({
+      instagram_token: inbox.instagram_token,
+      id: instagram_id,
+    });
+
+    lead = await createLeadByReceiveInstagramContent({
+      data: buildLeadPayload({
+        inbox,
+        name: profile?.username || fallbackName || "Instagram User",
+        avatar: profile?.profile_pic,
+        instagram_id,
+        is_follower: profile?.is_user_follow_business,
+      }),
+    });
+  }
+
+  return lead;
+};
+
+const getOrCreateConversation = async ({ inbox, lead }) => {
+  let conversation = await searchConversation({ lead_id: lead.id });
+  if (!conversation) {
+    conversation = await createNewConversation({
+      data: { inbox_id: inbox.id, lead_id: lead.id },
+    });
+  }
+  return conversation;
+};
+
+// ─── Webhook entry point ─────────────────────────────────────────────────────
+
 export const receiveMessageAndCommentsByWebhook = async ({
   inbox_id,
   data,
 }) => {
   const inbox = await findInboxByIdOrThrow({ id: inbox_id });
-
   const entry = data?.entry?.[0];
 
   const isComment =
     Array.isArray(entry?.changes) && entry.changes[0]?.field === "comments";
-
   const isDM = Array.isArray(entry?.messaging) && entry.messaging.length > 0;
 
   if (isComment) {
@@ -56,20 +146,21 @@ export const receiveMessageAndCommentsByWebhook = async ({
   return null;
 };
 
+// ─── Comments ────────────────────────────────────────────────────────────────
+
 const commentsInPost = async ({ inbox, data }) => {
   const entry = data?.entry[0];
+  const changeValue = entry.changes[0].value;
+  const commentId = changeValue.id; // ID externo do Instagram
 
-  const commentId = entry.changes[0].value.id;
-
-  if (
-    (await instaOficialModel.searchCommentById({ id: commentId })) ||
-    (await instaOficialModel.searchReplyById({ id: commentId }))
-  )
-    return true;
+  // Deduplicação: já processamos esse comentário/reply?
+  const [alreadyComment, alreadyReply] = await Promise.all([
+    instaOficialModel.searchCommentById({ id: commentId }),
+    instaOficialModel.searchReplyById({ id: commentId }),
+  ]);
+  if (alreadyComment || alreadyReply) return;
 
   const pageId = entry.id;
-
-  const changeValue = entry.changes[0].value;
   const mediaId = changeValue.media?.id;
   const senderId = changeValue.from.id;
   const senderUsername = changeValue.from.username;
@@ -77,67 +168,45 @@ const commentsInPost = async ({ inbox, data }) => {
 
   await setInstagramIdByWebhookReceive({ inboxId: inbox.id, id: pageId });
 
-  let lead = await searchLeadByInstagramId({
+  const lead = await getOrCreateLead({
     instagram_id: senderId,
-    user_id: inbox.user_id,
+    inbox,
+    fallbackName: senderUsername,
   });
 
-  if (!lead) {
-    const profile = await getInformationsByInstagramId({
-      instagram_token: inbox.instagram_token,
-      id: senderId,
-    });
-
-    lead = await createLeadByReceiveInstagramContent({
-      data: {
-        inbox,
-        user_id: inbox?.user_id,
-        name: senderUsername,
-        avatar: profile?.profile_pic
-          ? profile?.profile_pic
-          : "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
-        email: "",
-        phone: "",
-        lid: "",
-        pipeline_id: null,
-        company: "",
-        value: "",
-        notes: "",
-        tags: "",
-        lead_type: "lead",
-        instagram_id: senderId,
-        is_follower: profile.is_user_follow_business
-          ? profile.is_user_follow_business
-          : false,
-      },
-    });
-  }
-
+  // FIX: salva o comentário e usa o registro retornado (com ID interno)
   const commentSaved = await instaOficialModel.saveComments({
     data: {
       inbox_id: inbox.id,
       lead_id: lead.id,
       media_id: mediaId,
-      media_type: entry.changes[0].value.media.media_product_type,
+      media_type: changeValue.media?.media_product_type,
       comment_id: commentId,
       comment_content: commentText,
     },
   });
 
-  const repliesToPost = await getReplysToPostById({ postId: mediaId });
+  // FIX: condição corrigida de || para && (array vazio não deve disparar)
+  let repliesToPost = [];
+  try {
+    repliesToPost = await getReplysToPostById({ postId: mediaId });
+  } catch {
+    // Post pode não existir ainda no banco — ignora automação
+  }
 
-  if (repliesToPost || repliesToPost.length > 0) {
-    const replyToSend = repliesToPost.filter(
+  if (Array.isArray(repliesToPost) && repliesToPost.length > 0) {
+    const replyToSend = repliesToPost.find(
       (item) => item.comment_target === commentText,
     );
 
-    if (replyToSend.length > 0) {
+    if (replyToSend) {
+      // FIX: passa o ID interno do comentário salvo, não o ID externo do Instagram
       await replyCommentById({
-        commentId,
+        commentId: commentSaved.id,
         data: {
-          reply_content: replyToSend[0].comment_reply,
-          send_to_dm: replyToSend[0].dm_reply ? true : false,
-          message_to_dm: replyToSend[0].dm_reply,
+          reply_content: replyToSend.comment_reply,
+          send_to_dm: Boolean(replyToSend.dm_reply),
+          message_to_dm: replyToSend.dm_reply,
           automation_message: true,
         },
       });
@@ -145,76 +214,36 @@ const commentsInPost = async ({ inbox, data }) => {
   }
 };
 
-const messageInDmInstagram = async ({ inbox, data }) => {
-  const value = data?.entry[0];
+// ─── DM ──────────────────────────────────────────────────────────────────────
 
-  const messageId = value.messaging[0].message.mid;
+const messageInDmInstagram = async ({ inbox, data }) => {
+  const entry = data?.entry[0];
+  const messaging = entry.messaging[0];
+  const messageId = messaging.message.mid;
 
   if (await messageService.verifyMessageById({ messageId })) return null;
 
-  const pageId = value.id;
-
+  const pageId = entry.id;
   await setInstagramIdByWebhookReceive({ inboxId: inbox.id, id: pageId });
 
-  const senderId = value.messaging[0].sender.id;
-
-  const recipientId = value.messaging[0].recipient.id;
-
+  const senderId = messaging.sender.id;
+  const recipientId = messaging.recipient.id;
   const fromMe = recipientId === pageId ? "lead" : "user";
+  const leadInstagramId = recipientId === pageId ? senderId : recipientId;
 
-  const attachments = value.messaging[0].message.attachments;
+  const attachments = messaging.message.attachments;
   const messageType =
-    attachments && attachments.length > 0 && attachments[0].type
+    attachments?.length > 0 && attachments[0].type
       ? attachments[0].type
       : "text";
+  const messageContent = messaging.message.text ?? "";
 
-  const messageContent = value.messaging[0].message.text ?? "";
-
-  let lead = await searchLeadByInstagramId({
-    instagram_id: recipientId === pageId ? senderId : recipientId,
-    user_id: inbox.user_id,
+  const lead = await getOrCreateLead({
+    instagram_id: leadInstagramId,
+    inbox,
   });
 
-  if (!lead) {
-    const profile = await getInformationsByInstagramId({
-      instagram_token: inbox.instagram_token,
-      id: recipientId === pageId ? senderId : recipientId,
-    });
-
-    console.log("Profile do Instagram", profile);
-
-    lead = await createLeadByReceiveInstagramContent({
-      data: {
-        inbox,
-        user_id: inbox?.user_id,
-        name: profile.username || "Instagram User",
-        avatar: profile?.profile_pic
-          ? profile?.profile_pic
-          : "https://oxhjqkwdjobrhtwfwhnz.supabase.co/storage/v1/object/public/logo/4.png",
-        email: "",
-        phone: "",
-        lid: "",
-        pipeline_id: null,
-        company: "",
-        value: "",
-        notes: "",
-        tags: "",
-        lead_type: "lead",
-        instagram_id: senderId,
-        is_follower: profile.is_user_follow_business,
-      },
-    });
-  }
-
-  let conversation = await searchConversation({ lead_id: lead.id });
-  if (!conversation) {
-    conversation = await createNewConversation({
-      data: {
-        inbox_id: inbox.id,
-        lead_id: lead.id,
-      },
-    });
-  }
+  const conversation = await getOrCreateConversation({ inbox, lead });
 
   const MEDIA_TYPES = new Set([
     "sticker",
@@ -265,32 +294,23 @@ const messageInDmInstagram = async ({ inbox, data }) => {
       updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
     ]);
 
-    const now = new Date().toISOString();
-
     await sendMessageToClientConnected({
       instance: inbox.id,
-      finalMessage: {
-        id: createdNewMessage.id,
-        conversation_id: conversation.id,
-        lead_id: lead.id,
-        inbox_provider: "instagram",
+      finalMessage: buildWebsocketPayload({
+        message: createdNewMessage,
+        conversation,
+        lead,
         direction: "incoming",
         text: uploadUrl,
         mediaUrl: uploadUrl,
         mediaType: mimeTypeMap[messageType],
-        timestamp: now,
-        contact: lead.instagram_id,
-        last_inbound_message_at: now,
-        user: lead.name,
-        avatar: lead.avatar,
-        ai_enabled: conversation.ai_enabled,
-      },
+        inbox,
+      }),
     });
 
     return;
   }
 
-  // TEXT message path
   const createdNewMessage = await createMessage({
     data: {
       conversation_id: conversation.id,
@@ -310,32 +330,24 @@ const messageInDmInstagram = async ({ inbox, data }) => {
     updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
   ]);
 
-  const now = new Date().toISOString();
-
   await sendMessageToClientConnected({
     instance: inbox.id,
-    finalMessage: {
-      id: createdNewMessage.id,
-      conversation_id: conversation.id,
-      lead_id: lead.id,
-      inbox_provider: "instagram",
+    finalMessage: buildWebsocketPayload({
+      message: createdNewMessage,
+      conversation,
+      lead,
       direction: fromMe === "lead" ? "incoming" : "outgoing",
       text: messageContent,
-      timestamp: now,
-      contact: lead.instagram_id,
-      last_inbound_message_at: now,
-      user: lead.name,
-      avatar: lead.avatar,
-      ai_enabled: conversation.ai_enabled,
-    },
+      inbox,
+    }),
   });
-
-  return;
 };
 
-export const sendMessage = async ({ inbox, userId, lead, text }) => {
+// ─── Send message ─────────────────────────────────────────────────────────────
+
+export const sendMessage = async ({ inbox, lead, text }) => {
   const response = await fetch(
-    `https://graph.instagram.com/v25.0/${inbox?.instagram_id}/messages`,
+    `https://graph.instagram.com/v25.0/${inbox.instagram_id}/messages`,
     {
       method: "POST",
       headers: {
@@ -343,52 +355,48 @@ export const sendMessage = async ({ inbox, userId, lead, text }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        recipient: {
-          id: lead?.instagram_id,
-        },
-        message: {
-          text: text,
-        },
-      }),
-    },
-  );
-
-  const data = await response.json();
-
-  return data.message_id;
-};
-
-export const sendMessageAfterCommentInPost = async ({
-  inbox,
-  comment_id,
-  text,
-}) => {
-  const response = await fetch(
-    `https://graph.instagram.com/v25.0/${inbox?.instagram_id}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${inbox.instagram_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        recipient: {
-          comment_id: comment_id,
-        },
-        message: {
-          text: text,
-        },
+        recipient: { id: lead.instagram_id },
+        message: { text },
       }),
     },
   );
 
   if (!response.ok) {
-    throw new Error(await response.json());
+    const err = await response.json();
+    throw new Error(`Erro ao enviar mensagem: ${JSON.stringify(err)}`);
   }
+
   const data = await response.json();
+  return data.message_id;
+};
 
-  console.log(data);
+export const sendMessageAfterCommentInPost = async ({ inbox, lead, text }) => {
+  // FIX: DM após comentário deve ser enviada com o instagram_id do lead,
+  // não com o comment_id — a API Graph usa "id" do recipient para DMs
+  const response = await fetch(
+    `https://graph.instagram.com/v25.0/${inbox.instagram_id}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${inbox.instagram_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        recipient: { id: lead.instagram_id },
+        message: { text },
+      }),
+    },
+  );
 
+  // FIX: checar ok ANTES de chamar response.json()
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(
+      `Erro ao enviar DM após comentário: ${JSON.stringify(err)}`,
+    );
+  }
+
+  const data = await response.json();
   return data.message_id;
 };
 
@@ -396,27 +404,29 @@ export const setVerification = async ({ inboxId }) => {
   await setVerificationInInboxByMeta({ inboxId });
 };
 
+// ─── Instagram Graph API helpers ──────────────────────────────────────────────
+
 const getInformationsByInstagramId = async ({ instagram_token, id }) => {
   const response = await fetch(`https://graph.instagram.com/v25.0/${id}`, {
-    headers: {
-      Authorization: `Bearer ${instagram_token}`,
-    },
+    headers: { Authorization: `Bearer ${instagram_token}` },
   });
 
-  const data = await response.json();
+  if (!response.ok) {
+    console.error("Erro ao buscar perfil Instagram", await response.text());
+    return {};
+  }
 
-  return data;
+  return response.json();
 };
 
 export const getBase64ForMediaReceivesInInstagramWebhook = async ({ link }) => {
   const response = await fetch(link);
-
+  if (!response.ok) throw new Error(`Falha ao baixar mídia: ${link}`);
   const buffer = await response.arrayBuffer();
-
-  const base64 = Buffer.from(buffer).toString("base64");
-
-  return base64;
+  return Buffer.from(buffer).toString("base64");
 };
+
+// ─── Posts ────────────────────────────────────────────────────────────────────
 
 export const getAllPostsByInboxId = async ({ inbox_id }) => {
   const inbox = await findInboxByIdOrThrow({ id: inbox_id });
@@ -425,14 +435,13 @@ export const getAllPostsByInboxId = async ({ inbox_id }) => {
     `https://graph.instagram.com/v25.0/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&limit=100&access_token=${inbox.instagram_token}`,
   );
 
-  const data = await response.json();
+  if (!response.ok) throw new Error("Erro ao buscar posts do Instagram");
 
-  const posts = data.data;
+  const { data } = await response.json();
 
   await Promise.all(
-    posts.map(async (post) => {
+    data.map(async (post) => {
       const exists = await instaOficialModel.findPostById({ id: post.id });
-
       if (!exists) {
         await instaOficialModel.setPost({
           data: {
@@ -449,47 +458,37 @@ export const getAllPostsByInboxId = async ({ inbox_id }) => {
     }),
   );
 
-  return await instaOficialModel.findPostsByInboxId({ id: inbox.id });
+  return instaOficialModel.findPostsByInboxId({ id: inbox.id });
 };
 
 export const getPostWithCommentsById = async ({ post_id }) => {
   const post = await instaOficialModel.findPostById({ id: post_id });
-  if (!post) {
-    throw new Error("Post not found by id");
-  }
+  if (!post) throw new Error("Post not found by id");
   const comments = await getAllCommentsByPostId({ postId: post_id });
-
   return { post, comments };
 };
 
 export const reloadAllPostByInboxId = async ({ inbox_id }) => {
   const inbox = await findInboxByIdOrThrow({ id: inbox_id });
-
   await instaOficialModel.deleteAllPostByInboxId({ id: inbox.id });
-
   await getAllPostsByInboxId({ inbox_id: inbox.id });
-
   return true;
 };
 
+// ─── Replies to posts ─────────────────────────────────────────────────────────
+
 export const createReplyToPost = async ({ postId, data }) => {
   const post = await instaOficialModel.findPostById({ id: postId });
-
   if (!post) throw new Error("Post not found by id");
-
-  data.post_id = post.id;
-
   await instaOficialModel.createReplyToPost({
-    data,
+    data: { ...data, post_id: post.id },
   });
 };
 
 export const getReplysToPostById = async ({ postId }) => {
   const post = await instaOficialModel.findPostById({ id: postId });
-
   if (!post) throw new Error("Post not found by id");
-
-  return await instaOficialModel.getReplysToPostById({ id: post.id });
+  return instaOficialModel.getReplysToPostById({ id: post.id });
 };
 
 export const updateReplyById = async ({ postId, replyId, data }) => {
@@ -499,7 +498,6 @@ export const updateReplyById = async ({ postId, replyId, data }) => {
   const reply = await instaOficialModel.findReplyToPostByReplyId({
     id: replyId,
   });
-
   if (!reply) throw new Error("Reply not found by id");
 
   await instaOficialModel.updateReplyById({ id: reply.id, data });
@@ -512,50 +510,45 @@ export const deleteReplyById = async ({ postId, replyId }) => {
   const reply = await instaOficialModel.findReplyToPostByReplyId({
     id: replyId,
   });
-
   if (!reply) throw new Error("Reply not found by id");
 
-  return await instaOficialModel.deleteReplyById({ id: reply.id });
+  return instaOficialModel.deleteReplyById({ id: reply.id });
 };
+
+// ─── Comments ─────────────────────────────────────────────────────────────────
 
 export const getAllCommentsByPostId = async ({ postId }) => {
   if (!(await instaOficialModel.findPostById({ id: postId })))
     throw new Error("Post not found by id");
 
-  const allComments = await instaOficialModel.findCommentsByPostsId({
-    id: postId,
-  });
-
-  return allComments;
+  return instaOficialModel.findCommentsByPostsId({ id: postId });
 };
 
 export const getMediaPostById = async ({ instagram_token, media_id }) => {
   const response = await fetch(
     `https://graph.instagram.com/v25.0/${media_id}?fields=id,caption,media_type,media_url,permalink,timestamp,username,thumbnail_url&access_token=${instagram_token}`,
   );
-
-  const data = await response.json();
-
-  return data;
+  if (!response.ok) throw new Error("Erro ao buscar mídia do Instagram");
+  return response.json();
 };
 
 export const replyCommentById = async ({ commentId, data }) => {
+  // commentId aqui é o ID interno do banco (não o ID externo do Instagram)
   const comment = await instaOficialModel.findCommentById({ id: commentId });
-
   if (!comment) throw new Error("Comment not found by id");
-  if (comment.comment_response) throw new Error("Comment already replied ");
+  if (comment.comment_response) throw new Error("Comment already replied");
 
-  const lead = await searchLeadId({ id: comment.lead_id });
+  const [lead, inbox] = await Promise.all([
+    searchLeadId({ id: comment.lead_id }),
+    findInboxByIdOrThrow({ id: comment.inbox_id }),
+  ]);
 
-  const inbox = await findInboxByIdOrThrow({ id: comment.inbox_id });
-
-  const response = await fetch(
+  // Responde o comentário publicamente
+  const replyResponse = await fetch(
     `https://graph.instagram.com/v25.0/${comment.comment_id}/replies`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: `@${lead.name} ${data.reply_content}`,
         access_token: inbox.instagram_token,
@@ -563,11 +556,13 @@ export const replyCommentById = async ({ commentId, data }) => {
     },
   );
 
-  const dataResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error("Ocorreu um erro ao enviar comentário.");
+  // FIX: checar ok ANTES de chamar .json()
+  if (!replyResponse.ok) {
+    const err = await replyResponse.json();
+    throw new Error(`Erro ao enviar comentário: ${JSON.stringify(err)}`);
   }
+
+  const replyData = await replyResponse.json();
 
   await instaOficialModel.saveReplyToCommentById({
     data: {
@@ -575,23 +570,18 @@ export const replyCommentById = async ({ commentId, data }) => {
       reply: data.automation_message
         ? `AUTOMATION @${lead.name} ${data.reply_content}`
         : data.reply_content,
-      comment_response_id: dataResponse.id,
+      comment_response_id: replyData.id,
     },
   });
 
-  if (data.send_to_dm) {
-    let conversation = await searchConversation({ lead_id: lead.id });
-    if (!conversation) {
-      conversation = await createNewConversation({
-        data: {
-          inbox_id: inbox.id,
-          lead_id: lead.id,
-        },
-      });
-    }
+  // Envia DM se configurado
+  if (data.send_to_dm && data.message_to_dm) {
+    const conversation = await getOrCreateConversation({ inbox, lead });
+
+    // FIX: passa lead para usar instagram_id correto no recipient
     const messageId = await sendMessageAfterCommentInPost({
       inbox,
-      comment_id: commentId,
+      lead,
       text: data.message_to_dm,
     });
 
@@ -602,9 +592,7 @@ export const replyCommentById = async ({ commentId, data }) => {
         inbox: inbox.id,
         senderType: data.automation_message ? "ai" : "user",
         mediaType: "text",
-        messageContent: data.automation_message
-          ? data.message_to_dm
-          : data.message_to_dm,
+        messageContent: data.message_to_dm,
         messageId,
       },
     });
@@ -613,34 +601,25 @@ export const replyCommentById = async ({ commentId, data }) => {
 
     await Promise.all([
       updateLastMessageTimestamp({ conversationId: conversation.id }),
-      //updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
+      updateLastMessageInboundTimestamp({ conversationId: conversation.id }),
     ]);
-
-    const now = new Date().toISOString();
 
     await sendMessageToClientConnected({
       instance: inbox.id,
-      finalMessage: {
-        id: createdNewMessage.id,
-        conversation_id: conversation.id,
-        lead_id: lead.id,
-        inbox_provider: "instagram",
+      finalMessage: buildWebsocketPayload({
+        message: createdNewMessage,
+        conversation,
+        lead,
         direction: "outgoing",
         text: data.message_to_dm,
-        timestamp: now,
-        contact: lead.instagram_id,
-        last_inbound_message_at: now,
-        user: lead.name,
-        avatar: lead.avatar,
-        ai_enabled: conversation.ai_enabled,
-      },
+        inbox,
+      }),
     });
   }
 };
 
 export const deleteCommentById = async ({ comment_id }) => {
   const comment = await instaOficialModel.findCommentById({ id: comment_id });
-
   if (!comment) throw new Error("Comment not found by id");
 
   const inbox = await findInboxByIdOrThrow({ id: comment.inbox_id });
@@ -649,15 +628,11 @@ export const deleteCommentById = async ({ comment_id }) => {
     `https://graph.instagram.com/v25.0/${comment.comment_id}`,
     {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${inbox.instagram_token}`,
-      },
+      headers: { Authorization: `Bearer ${inbox.instagram_token}` },
     },
   );
 
-  if (!response.ok) {
-    throw new Error("The comment could not be deleted. ");
-  }
+  if (!response.ok) throw new Error("The comment could not be deleted.");
 
   await instaOficialModel.deleteCommentById({ comment_id });
 };
